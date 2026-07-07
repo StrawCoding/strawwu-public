@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>StrawWU — 下載</title>
+  <meta name="description" content="StrawWU 官方 ISO 下載。Dual Runtime 桌面作業系統。" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <style>
+    :root {
+      --bg: #0A0E14;
+      --panel: #111820;
+      --panel-border: #1e2a38;
+      --teal: #14B8A6;
+      --teal-dim: #0d9488;
+      --amber: #F59E0B;
+      --gold: #D4A853;
+      --blue: #60A5FA;
+      --text: #F4F6F9;
+      --muted: #A9B6C3;
+      --danger: #f87171;
+      --radius: 12px;
+      --font: "Segoe UI", system-ui, -apple-system, sans-serif;
+      --mono: ui-monospace, "Cascadia Code", monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+    a { color: var(--teal); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .wrap { max-width: 960px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+    header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 2.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--panel-border);
+    }
+    header img { width: 40px; height: 40px; border-radius: 22%; }
+    header .title { font-weight: 700; font-size: 1.1rem; }
+    header .sub { color: var(--muted); font-size: 0.85rem; }
+    .hero {
+      background: linear-gradient(145deg, #0f1720 0%, #0a1218 100%);
+      border: 1px solid var(--panel-border);
+      border-radius: calc(var(--radius) + 4px);
+      padding: 2rem 1.75rem;
+      margin-bottom: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 80% 60% at 20% 0%, rgba(20,184,166,0.12), transparent);
+      pointer-events: none;
+    }
+    .hero-logo { max-width: 280px; height: auto; margin-bottom: 1rem; }
+    .kicker {
+      color: var(--teal);
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+    }
+    .hero h1 { font-size: clamp(1.5rem, 4vw, 2rem); margin-bottom: 0.5rem; }
+    .hero-lead { color: var(--muted); max-width: 42rem; margin-bottom: 1.5rem; }
+    .latest-badge {
+      display: inline-block;
+      background: rgba(20,184,166,0.15);
+      color: var(--teal);
+      border: 1px solid rgba(20,184,166,0.35);
+      padding: 0.2rem 0.6rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+    .btn-row { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.25rem;
+      border-radius: var(--radius);
+      font-weight: 600;
+      font-size: 0.95rem;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .btn-primary {
+      background: var(--teal);
+      color: #042f2e;
+    }
+    .btn-primary:hover { background: var(--teal-dim); text-decoration: none; }
+    .btn-secondary {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--panel-border);
+    }
+    .btn-secondary:hover { border-color: var(--muted); text-decoration: none; }
+    .meta-line {
+      margin-top: 1rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+      font-family: var(--mono);
+      word-break: break-all;
+    }
+    section h2 {
+      font-size: 1.15rem;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--panel-border);
+    }
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--panel-border);
+      border-radius: var(--radius);
+      background: var(--panel);
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    th, td { padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid var(--panel-border); }
+    th { color: var(--muted); font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+    .tag-latest {
+      background: rgba(245,158,11,0.15);
+      color: var(--amber);
+      font-size: 0.7rem;
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+    .sha { font-family: var(--mono); font-size: 0.72rem; color: var(--muted); max-width: 12rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .verify {
+      margin-top: 2rem;
+      padding: 1.25rem;
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: var(--radius);
+    }
+    .verify h3 { font-size: 0.95rem; margin-bottom: 0.75rem; }
+    pre {
+      background: #060a0f;
+      border: 1px solid var(--panel-border);
+      border-radius: 8px;
+      padding: 1rem;
+      overflow-x: auto;
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    footer {
+      margin-top: 3rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--panel-border);
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+    .loading { color: var(--muted); padding: 2rem; text-align: center; }
+    .error { color: var(--danger); padding: 1rem; background: rgba(248,113,113,0.08); border-radius: var(--radius); }
+    @media (max-width: 640px) {
+      .hide-sm { display: none; }
+      th, td { padding: 0.6rem 0.75rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <img src="assets/branding/strawwu-icon.webp" width="40" height="40" alt="" />
+      <div>
+        <div class="title">StrawWU</div>
+        <div class="sub">Desktop OS · Dual Runtime</div>
+      </div>
+    </header>
+
+    <section class="hero" id="hero">
+      <div class="loading" id="hero-loading">載入最新版本…</div>
+    </section>
+
+    <section>
+      <h2>所有版本</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>版本</th>
+              <th>檔案</th>
+              <th class="hide-sm">大小</th>
+              <th class="hide-sm">SHA256</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="releases-body">
+            <tr><td colspan="5" class="loading">載入中…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="verify">
+      <h3>驗證下載</h3>
+      <p style="color:var(--muted);font-size:0.9rem;margin-bottom:0.75rem;">
+        下載後請比對 SHA256，確保檔案完整未損壞。
+      </p>
+      <pre id="verify-cmd">sha256sum -c SHA256SUMS</pre>
+    </section>
+
+    <footer>
+      <p>StrawWU by <a href="https://github.com/StrawCoding">StrawCoding</a> ·
+      <a href="https://github.com/StrawCoding/strawwu-public">GitHub</a> ·
+      ISO 鏡像 <a href="https://apt.strawwu.org/iso/">apt.strawwu.org</a></p>
+      <p style="margin-top:0.5rem" id="updated-at"></p>
+    </footer>
+  </div>
+
+  <script>
+    const BASE = document.querySelector('meta[name="base-path"]')?.content || '';
+    const MANIFEST = `${BASE}releases.json`.replace(/\/+/g, '/');
+
+    function esc(s) {
+      const d = document.createElement('div');
+      d.textContent = s;
+      return d.innerHTML;
+    }
+
+    function shortSha(h) {
+      return h ? h.slice(0, 12) + '…' : '—';
+    }
+
+    function renderHero(latest) {
+      const el = document.getElementById('hero');
+      el.innerHTML = `
+        <span class="latest-badge">最新版本 v${esc(latest.version)}</span>
+        <img class="hero-logo" src="assets/branding/strawwu-momo-light.webp" width="384" height="256" alt="StrawWU" />
+        <p class="kicker">StrawWU Public Release</p>
+        <h1>下載 StrawWU ${esc(latest.version)}</h1>
+        <p class="hero-lead">基於 Ubuntu 26.04 Resolute 的 Dual Runtime 桌面作業系統。支援 Live USB 與硬碟安裝（BIOS + UEFI）。</p>
+        <div class="btn-row">
+          <a class="btn btn-primary" href="${esc(latest.download_url)}" download>下載 ISO（${esc(latest.size_human)}）</a>
+          <a class="btn btn-secondary" href="#all-releases">查看所有版本</a>
+          <a class="btn btn-secondary" href="${esc(latest.release_url)}" target="_blank" rel="noopener">GitHub Release</a>
+        </div>
+        <p class="meta-line">SHA256: ${esc(latest.sha256)}</p>
+      `;
+    }
+
+    function renderTable(releases, latestVer) {
+      const tbody = document.getElementById('releases-body');
+      tbody.innerHTML = releases.map(r => `
+        <tr>
+          <td>
+            v${esc(r.version)}
+            ${r.version === latestVer ? '<span class="tag-latest">最新</span>' : ''}
+          </td>
+          <td>${esc(r.filename)}</td>
+          <td class="hide-sm">${esc(r.size_human)}</td>
+          <td class="hide-sm" title="${esc(r.sha256)}"><span class="sha">${esc(shortSha(r.sha256))}</span></td>
+          <td><a href="${esc(r.download_url)}" download>下載</a></td>
+        </tr>
+      `).join('');
+    }
+
+    async function load() {
+      try {
+        const res = await fetch(MANIFEST);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        const latestVer = data.latest;
+        const latest = data.releases.find(r => r.version === latestVer) || data.releases[0];
+        renderHero(latest);
+        renderTable(data.releases, latestVer);
+        document.getElementById('updated-at').textContent =
+          `清單更新：${data.updated_at || '—'}`;
+        const section = document.querySelector('section:nth-of-type(2)');
+        section.id = 'all-releases';
+      } catch (err) {
+        document.getElementById('hero').innerHTML =
+          `<div class="error">無法載入 releases.json：${esc(err.message)}</div>`;
+        document.getElementById('releases-body').innerHTML =
+          `<tr><td colspan="5" class="error">載入失敗</td></tr>`;
+      }
+    }
+
+    load();
+  </script>
+</body>
+</html>
