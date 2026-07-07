@@ -3,7 +3,7 @@
 公開發行倉庫：StrawWU ISO 下載站與版本清單。
 
 - **網站（GitHub Pages）**：https://strawcoding.github.io/strawwu-public/
-- **ISO 鏡像**：https://apt.strawwu.org/iso/
+- **ISO 鏡像**：http://apt.strawwu.org.wastebase.xyz/iso/
 - **GitHub Releases**：校驗碼與發行說明（ISO 超過 GitHub 2 GiB 上限，實際檔案在鏡像）
 
 ## 目錄
@@ -37,7 +37,7 @@ git push
 ## 驗證
 
 ```bash
-wget https://apt.strawwu.org/iso/SHA256SUMS
+wget http://apt.strawwu.org.wastebase.xyz/iso/SHA256SUMS
 sha256sum -c SHA256SUMS
 ```
 
