@@ -42,7 +42,7 @@
       padding-bottom: 1rem;
       border-bottom: 1px solid var(--panel-border);
     }
-    header img { width: 40px; height: 40px; border-radius: 22%; }
+    header img { width: 40px; height: 40px; }
     header .title { font-weight: 700; font-size: 1.1rem; }
     header .sub { color: var(--muted); font-size: 0.85rem; }
     .hero {
@@ -176,7 +176,7 @@
 <body>
   <div class="wrap">
     <header>
-      <img src="assets/branding/strawwu-icon.webp" width="40" height="40" alt="" />
+      <img src="assets/branding/strawwu-icon.svg" width="40" height="40" alt="StrawWU" />
       <div>
         <div class="title">StrawWU</div>
         <div class="sub">Desktop OS · Dual Runtime</div>
@@ -212,13 +212,15 @@
       <p style="color:var(--muted);font-size:0.9rem;margin-bottom:0.75rem;">
         下載後請比對 SHA256，確保檔案完整未損壞。
       </p>
-      <pre id="verify-cmd">sha256sum -c SHA256SUMS</pre>
+      <pre id="verify-cmd"># 於 GitHub Release 下載全部 .part 與 SHA256SUMS、join-iso.sh
+chmod +x join-iso.sh
+./join-iso.sh StrawWU-&lt;version&gt;-amd64.iso StrawWU-&lt;version&gt;-amd64.iso.*.part
+sha256sum -c SHA256SUMS</pre>
     </section>
 
     <footer>
       <p>StrawWU by <a href="https://github.com/StrawCoding">StrawCoding</a> ·
-      <a href="https://github.com/StrawCoding/strawwu-public">GitHub</a> ·
-      ISO 鏡像 <a href="https://apt.strawwu.org/iso/">apt.strawwu.org</a></p>
+      <a href="https://github.com/StrawCoding/strawwu-public">GitHub Releases</a></p>
       <p style="margin-top:0.5rem" id="updated-at"></p>
     </footer>
   </div>
@@ -241,16 +243,17 @@
       const el = document.getElementById('hero');
       el.innerHTML = `
         <span class="latest-badge">最新版本 v${esc(latest.version)}</span>
-        <img class="hero-logo" src="assets/branding/strawwu-momo-light.webp" width="384" height="256" alt="StrawWU" />
+        <img class="hero-logo" src="assets/branding/strawwu-lockup.svg" width="384" height="256" alt="StrawWU" />
         <p class="kicker">StrawWU Public Release</p>
         <h1>下載 StrawWU ${esc(latest.version)}</h1>
         <p class="hero-lead">基於 Ubuntu 26.04 Resolute 的 Dual Runtime 桌面作業系統。支援 Live USB 與硬碟安裝（BIOS + UEFI）。</p>
         <div class="btn-row">
-          <a class="btn btn-primary" href="${esc(latest.download_url)}" download>下載 ISO（${esc(latest.size_human)}）</a>
+          <a class="btn btn-primary" href="${esc(latest.download_url)}" target="_blank" rel="noopener">下載 ISO（${esc(latest.size_human)}${latest.part_count ? ` · ${latest.part_count} 個分片` : ''}）</a>
           <a class="btn btn-secondary" href="#all-releases">查看所有版本</a>
           <a class="btn btn-secondary" href="${esc(latest.release_url)}" target="_blank" rel="noopener">GitHub Release</a>
         </div>
         <p class="meta-line">SHA256: ${esc(latest.sha256)}</p>
+        ${latest.part_count ? `<p class="meta-line">GitHub 單檔上限 2 GiB，請在 Release 頁下載全部 .part 檔後執行 join-iso.sh 合併。</p>` : ''}
       `;
     }
 
@@ -265,7 +268,7 @@
           <td>${esc(r.filename)}</td>
           <td class="hide-sm">${esc(r.size_human)}</td>
           <td class="hide-sm" title="${esc(r.sha256)}"><span class="sha">${esc(shortSha(r.sha256))}</span></td>
-          <td><a href="${esc(r.download_url)}" download>下載</a></td>
+          <td><a href="${esc(r.download_url)}" target="_blank" rel="noopener">下載</a></td>
         </tr>
       `).join('');
     }
