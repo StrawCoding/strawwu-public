@@ -4,7 +4,7 @@ set -euo pipefail
 
 ISO_DIR="${STRAWWU_ISO_DIR:-/mnt/data/code/project/StrawCoding/StrawWU/os-image/output}"
 DEST="$(dirname "$0")/../docs/releases.json"
-MIRROR_BASE="${STRAWWU_MIRROR_BASE:-https://apt.strawwu.org/iso}"
+MIRROR_BASE="${STRAWWU_MIRROR_BASE:-http://apt.strawwu.org.wastebase.xyz/iso}"
 GITHUB_REPO="${STRAWWU_PUBLIC_REPO:-StrawCoding/strawwu-public}"
 
 if [[ ! -d "$ISO_DIR" ]]; then

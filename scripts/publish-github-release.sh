@@ -21,7 +21,7 @@ trap 'rm -rf "$tmpdir"' EXIT
 
 sha256="$(sha256sum "$iso" | awk '{print $1}')"
 size="$(stat -c%s "$iso")"
-mirror_url="https://apt.strawwu.org/iso/$(basename "$iso")"
+mirror_url="http://apt.strawwu.org.wastebase.xyz/iso/$(basename "$iso")"
 
 cat > "$tmpdir/release-notes.md" <<EOF
 # StrawWU v${VERSION}
