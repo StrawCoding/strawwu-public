@@ -33,7 +33,7 @@ check "manifest no wastebase mirror" "! curl -fsS '$BASE/releases.json' | grep -
 check "manifest github download base" "curl -fsS '$BASE/releases.json' | grep -q 'github.com/${REPO}'"
 check "github release exists" "gh release view '$LATEST_TAG' --repo '$REPO'"
 check "github release has iso part" "gh release view '$LATEST_TAG' --repo '$REPO' --json assets -q '.assets[].name' | grep -q '.part'"
-check "github release SHA256SUMS" "curl -fsSI 'https://github.com/${REPO}/releases/download/${LATEST_TAG}/SHA256SUMS' | grep -q '200'"
+check "github release SHA256SUMS" "curl -fsSL 'https://github.com/${REPO}/releases/download/${LATEST_TAG}/SHA256SUMS' | grep -q 'StrawWU-'"
 check "pages site (if deployed)" "curl -fsS '$PAGES_URL' | grep -q 'StrawWU' || test '$PAGES_URL' = 'skip'"
 
 echo "---"
