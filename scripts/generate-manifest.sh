@@ -28,6 +28,7 @@ def gh_release_assets(version: str):
         out = subprocess.check_output(
             ["gh", "release", "view", tag, "--repo", gh_repo, "--json", "assets,publishedAt"],
             text=True,
+            stderr=subprocess.DEVNULL,
         )
         data = json.loads(out)
     except subprocess.CalledProcessError:
