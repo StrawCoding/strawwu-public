@@ -62,5 +62,5 @@ download.strawwu.org → 807e8f07-7a7d-4170-b061-d4efd86dcb0f.cfargotunnel.com
 ## 備註
 
 - ISO 不放入 git tree（僅 manifest + 靜態網站在 repo 內）
-- CDN 實體檔案位於 `/opt/1panel/www/sites/download.strawwu.org/index/v<version>/`
+- CDN 實體檔案位於 `/opt/1panel/www/sites/download.strawwu.org/releases/v<version>/`（nginx alias；與 `index/` 靜態頁分離）
 - 首頁自動顯示 `releases.json` 中 `latest` 欄位的最新版本
