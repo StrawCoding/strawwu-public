@@ -70,7 +70,8 @@ sha256sum -c SHA256SUMS
 
 ${parts_md}
 
-Web: https://strawcoding.github.io/strawwu-public/
+Web: https://download.strawwu.org/
+GitHub: https://github.com/${REPO}/releases/tag/${tag}
 EOF
 
 if [[ "$SKIP_UPLOAD" == "1" ]]; then

@@ -5,13 +5,14 @@ set -euo pipefail
 ISO_DIR="${STRAWWU_ISO_DIR:-/mnt/data/code/project/StrawCoding/StrawWU/os-image/output}"
 DEST="$(dirname "$0")/../docs/releases.json"
 GITHUB_REPO="${STRAWWU_PUBLIC_REPO:-StrawCoding/strawwu-public}"
+DOWNLOAD_BASE="${STRAWWU_DOWNLOAD_BASE:-https://download.strawwu.org}"
 
 if [[ ! -d "$ISO_DIR" ]]; then
   echo "ISO directory not found: $ISO_DIR" >&2
   exit 1
 fi
 
-python3 - "$ISO_DIR" "$DEST" "$GITHUB_REPO" <<'PY'
+python3 - "$ISO_DIR" "$DEST" "$GITHUB_REPO" "$DOWNLOAD_BASE" <<'PY'
 import json, re, subprocess, sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -19,6 +20,8 @@ from pathlib import Path
 iso_dir = Path(sys.argv[1])
 dest = sys.argv[2]
 gh_repo = sys.argv[3]
+download_base = sys.argv[4].rstrip("/")
+releases_download_base = f"https://github.com/{gh_repo}/releases/download"
 entries = []
 ver_re = re.compile(r"StrawWU-(\d+\.\d+\.\d+\.\d+)-amd64\.iso$")
 
@@ -26,7 +29,7 @@ def gh_release_assets(version: str):
     tag = f"v{version}"
     try:
         out = subprocess.check_output(
-            ["gh", "release", "view", tag, "--repo", gh_repo, "--json", "assets,publishedAt"],
+            ["gh", "release", "view", tag, "--repo", gh_repo, "--json", "assets,publishedAt,url"],
             text=True,
             stderr=subprocess.DEVNULL,
         )
@@ -36,15 +39,17 @@ def gh_release_assets(version: str):
     assets = []
     for asset in data.get("assets") or []:
         name = asset.get("name") or ""
-        if name.endswith(".part") or name == "join-iso.sh":
+        if name.endswith(".part") or name in ("join-iso.sh", "SHA256SUMS", "SHA256SUMS.asc"):
+            url = asset.get("url") or f"{releases_download_base}/{tag}/{name}"
             assets.append({
                 "name": name,
-                "url": f"https://github.com/{gh_repo}/releases/download/{tag}/{name}",
+                "url": url,
                 "size": asset.get("size"),
             })
     assets.sort(key=lambda a: a["name"])
     return {
         "published_at": data.get("publishedAt"),
+        "release_url": data.get("url") or f"https://github.com/{gh_repo}/releases/tag/{tag}",
         "parts": assets,
         "has_iso_parts": any(a["name"].endswith(".part") for a in assets),
     }
@@ -72,7 +77,8 @@ for path in sorted(iso_dir.glob("StrawWU-*.iso"), key=lambda p: p.name, reverse=
         sha256 = h.hexdigest()
 
     rel = gh_release_assets(version)
-    release_url = f"https://github.com/{gh_repo}/releases/tag/v{version}"
+    tag = f"v{version}"
+    release_url = rel["release_url"] if rel else f"https://github.com/{gh_repo}/releases/tag/{tag}"
     entry = {
         "version": version,
         "filename": path.name,
@@ -100,7 +106,8 @@ payload = {
     "schema": "strawwu-public-releases/v2",
     "updated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
     "latest": latest,
-    "download_base": f"https://github.com/{gh_repo}/releases/download",
+    "download_base": download_base,
+    "releases_download_base": releases_download_base,
     "github_repo": gh_repo,
     "releases": entries,
 }

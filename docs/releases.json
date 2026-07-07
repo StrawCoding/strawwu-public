@@ -1,8 +1,9 @@
 {
   "schema": "strawwu-public-releases/v2",
-  "updated_at": "2026-07-07T20:11:34Z",
+  "updated_at": "2026-07-07T21:35:12Z",
   "latest": "0.6.2.5",
-  "download_base": "https://github.com/StrawCoding/strawwu-public/releases/download",
+  "download_base": "https://download.strawwu.org",
+  "releases_download_base": "https://github.com/StrawCoding/strawwu-public/releases/download",
   "github_repo": "StrawCoding/strawwu-public",
   "releases": [
     {
@@ -15,6 +16,11 @@
       "release_url": "https://github.com/StrawCoding/strawwu-public/releases/tag/v0.6.2.5",
       "published_at": "2026-07-07T19:20:45Z",
       "parts": [
+        {
+          "name": "SHA256SUMS",
+          "url": "https://github.com/StrawCoding/strawwu-public/releases/download/v0.6.2.5/SHA256SUMS",
+          "size": 92
+        },
         {
           "name": "StrawWU-0.6.2.5-amd64.iso.01.part",
           "url": "https://github.com/StrawCoding/strawwu-public/releases/download/v0.6.2.5/StrawWU-0.6.2.5-amd64.iso.01.part",
@@ -47,7 +53,36 @@
       "sha256": "81862be169ec765a53f7f4ad57313d8abd9fe8360e78a19298f48d124065582e",
       "download_url": "https://github.com/StrawCoding/strawwu-public/releases/tag/v0.6.1.5",
       "release_url": "https://github.com/StrawCoding/strawwu-public/releases/tag/v0.6.1.5",
-      "published_at": "2026-07-07T09:55:08Z"
+      "published_at": "2026-07-07T20:34:07Z",
+      "parts": [
+        {
+          "name": "SHA256SUMS",
+          "url": "https://github.com/StrawCoding/strawwu-public/releases/download/v0.6.1.5/SHA256SUMS",
+          "size": 92
+        },
+        {
+          "name": "StrawWU-0.6.1.5-amd64.iso.01.part",
+          "url": "https://github.com/StrawCoding/strawwu-public/releases/download/v0.6.1.5/StrawWU-0.6.1.5-amd64.iso.01.part",
+          "size": 1887436800
+        },
+        {
+          "name": "StrawWU-0.6.1.5-amd64.iso.02.part",
+          "url": "https://github.com/StrawCoding/strawwu-public/releases/download/v0.6.1.5/StrawWU-0.6.1.5-amd64.iso.02.part",
+          "size": 1887436800
+        },
+        {
+          "name": "StrawWU-0.6.1.5-amd64.iso.03.part",
+          "url": "https://github.com/StrawCoding/strawwu-public/releases/download/v0.6.1.5/StrawWU-0.6.1.5-amd64.iso.03.part",
+          "size": 1321441280
+        },
+        {
+          "name": "join-iso.sh",
+          "url": "https://github.com/StrawCoding/strawwu-public/releases/download/v0.6.1.5/join-iso.sh",
+          "size": 829
+        }
+      ],
+      "part_count": 3,
+      "iso_published": true
     },
     {
       "version": "0.6.1.4",
@@ -57,7 +92,36 @@
       "sha256": "5fed34e32df285721a74a5b0b90d4e60da10fe96dfa0f54d5a2416a9d8037b4a",
       "download_url": "https://github.com/StrawCoding/strawwu-public/releases/tag/v0.6.1.4",
       "release_url": "https://github.com/StrawCoding/strawwu-public/releases/tag/v0.6.1.4",
-      "published_at": "2026-07-06T16:35:07Z"
+      "published_at": "2026-07-07T20:55:06Z",
+      "parts": [
+        {
+          "name": "SHA256SUMS",
+          "url": "https://github.com/StrawCoding/strawwu-public/releases/download/v0.6.1.4/SHA256SUMS",
+          "size": 92
+        },
+        {
+          "name": "StrawWU-0.6.1.4-amd64.iso.01.part",
+          "url": "https://github.com/StrawCoding/strawwu-public/releases/download/v0.6.1.4/StrawWU-0.6.1.4-amd64.iso.01.part",
+          "size": 1887436800
+        },
+        {
+          "name": "StrawWU-0.6.1.4-amd64.iso.02.part",
+          "url": "https://github.com/StrawCoding/strawwu-public/releases/download/v0.6.1.4/StrawWU-0.6.1.4-amd64.iso.02.part",
+          "size": 1887436800
+        },
+        {
+          "name": "StrawWU-0.6.1.4-amd64.iso.03.part",
+          "url": "https://github.com/StrawCoding/strawwu-public/releases/download/v0.6.1.4/StrawWU-0.6.1.4-amd64.iso.03.part",
+          "size": 1477515264
+        },
+        {
+          "name": "join-iso.sh",
+          "url": "https://github.com/StrawCoding/strawwu-public/releases/download/v0.6.1.4/join-iso.sh",
+          "size": 829
+        }
+      ],
+      "part_count": 3,
+      "iso_published": true
     },
     {
       "version": "0.5.0.7",
@@ -75,9 +139,23 @@
       "size": 5596526592,
       "size_human": "5.21 GiB",
       "sha256": "c9d2e312a00ae91ee80ebb046eb08920d4295c77191b3fde73e3202b63aefe21",
-      "download_url": "https://github.com/StrawCoding/strawwu-public/releases/tag/v0.5.0.6",
-      "release_url": "https://github.com/StrawCoding/strawwu-public/releases/tag/v0.5.0.6",
-      "published_at": "2026-07-06T07:30:08Z"
+      "download_url": "https://github.com/StrawCoding/strawwu-public/releases/tag/untagged-b6b970de9fbcb89d14ef",
+      "release_url": "https://github.com/StrawCoding/strawwu-public/releases/tag/untagged-b6b970de9fbcb89d14ef",
+      "published_at": "2026-07-06T07:30:08Z",
+      "parts": [
+        {
+          "name": "SHA256SUMS",
+          "url": "https://github.com/StrawCoding/strawwu-public/releases/download/untagged-b6b970de9fbcb89d14ef/SHA256SUMS",
+          "size": 92
+        },
+        {
+          "name": "join-iso.sh",
+          "url": "https://github.com/StrawCoding/strawwu-public/releases/download/untagged-b6b970de9fbcb89d14ef/join-iso.sh",
+          "size": 829
+        }
+      ],
+      "part_count": 0,
+      "iso_published": false
     },
     {
       "version": "0.5.0.5",
