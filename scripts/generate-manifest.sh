@@ -40,7 +40,7 @@ def gh_release_assets(version: str):
     for asset in data.get("assets") or []:
         name = asset.get("name") or ""
         if name.endswith(".part") or name in ("join-iso.sh", "SHA256SUMS", "SHA256SUMS.asc"):
-            url = asset.get("url") or f"{releases_download_base}/{tag}/{name}"
+            url = f"{download_base}/{tag}/{name}"
             assets.append({
                 "name": name,
                 "url": url,
@@ -85,7 +85,7 @@ for path in sorted(iso_dir.glob("StrawWU-*.iso"), key=lambda p: p.name, reverse=
         "size": size,
         "size_human": f"{size / (1024**3):.2f} GiB",
         "sha256": sha256,
-        "download_url": release_url,
+        "download_url": f"{download_base}/{tag}/",
         "release_url": release_url,
         "published_at": datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
     }

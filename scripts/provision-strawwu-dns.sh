@@ -1,16 +1,13 @@
 #!/usr/bin/env bash
 # Provision strawwu.org DNS on Cloudflare.
-# - download.strawwu.org → GitHub Pages (strawcoding.github.io)
-# - strawwu.org / www / apt → wastebase-origin Cloudflare Tunnel
+# - download.strawwu.org / apt.strawwu.org / strawwu.org / www → wastebase-origin Cloudflare Tunnel
 # Preview: *.strawwu.org.wastebase.xyz (wastebase.xyz zone token from cert.pem or 1Panel).
 # Apex: strawwu.org / www / download / apt (STRAWWU_CF_API_TOKEN or CLOUDFLARE_API_TOKEN + zone).
 set -euo pipefail
 
 ZONE_NAME="${STRAWWU_ZONE_NAME:-strawwu.org}"
 TUNNEL_CNAME="${STRAWWU_TUNNEL_CNAME:-807e8f07-7a7d-4170-b061-d4efd86dcb0f.cfargotunnel.com}"
-GITHUB_PAGES_CNAME="${STRAWWU_GITHUB_PAGES_CNAME:-strawcoding.github.io}"
-TUNNEL_NAMES=(strawwu.org www apt)
-DOWNLOAD_NAME="download"
+TUNNEL_NAMES=(strawwu.org www apt download)
 
 cert_token() {
   python3 - <<'PY'
@@ -113,8 +110,6 @@ for name in "${TUNNEL_NAMES[@]}"; do
   fi
   api_upsert_cname "$preview_token" "$WASTEBASE_ZONE_ID" "$preview_name" "$TUNNEL_CNAME" true
 done
-api_upsert_cname "$preview_token" "$WASTEBASE_ZONE_ID" \
-  "${DOWNLOAD_NAME}.strawwu.org.wastebase.xyz" "$GITHUB_PAGES_CNAME" false
 
 apex_tok="$(apex_token || true)"
 if [[ -z "${apex_tok:-}" ]]; then
@@ -146,7 +141,5 @@ for name in "${TUNNEL_NAMES[@]}"; do
   fi
   api_upsert_cname "$apex_tok" "$zone_id" "$record_name" "$TUNNEL_CNAME" true
 done
-api_upsert_cname "$apex_tok" "$zone_id" \
-  "${DOWNLOAD_NAME}.${ZONE_NAME}" "$GITHUB_PAGES_CNAME" false
 
-echo "DONE: strawwu.org DNS (download → GitHub Pages, others → tunnel)"
+echo "DONE: strawwu.org DNS (all hosts → tunnel)"
