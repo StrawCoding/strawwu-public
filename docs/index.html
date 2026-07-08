@@ -245,13 +245,14 @@ sha256sum -c SHA256SUMS
 
     function primaryDownloadUrl(latest) {
       if (latest.iso_url) return latest.iso_url;
-      if (latest.filename && latest.download_url) {
-        const base = latest.download_url.replace(/\/$/, '');
-        return `${base}/${latest.filename}`;
-      }
+      if (latest.release_url) return latest.release_url;
       if (latest.parts && latest.parts.length) {
         const part = latest.parts.find(p => p.name.endsWith('.part'));
         if (part) return part.url;
+      }
+      if (latest.filename && latest.download_url) {
+        const base = latest.download_url.replace(/\/$/, '');
+        return `${base}/${latest.filename}`;
       }
       return latest.download_url;
     }
@@ -267,11 +268,10 @@ sha256sum -c SHA256SUMS
         <p class="hero-lead">基於 Ubuntu 26.04 Resolute 的 Dual Runtime 桌面作業系統。支援 Live USB 與硬碟安裝（BIOS + UEFI）。</p>
         <div class="btn-row">
           <a class="btn btn-primary" href="${esc(dl)}" target="_blank" rel="noopener">下載 ISO（${esc(latest.size_human)}）</a>
-          <a class="btn btn-secondary" href="${esc(latest.release_url)}" target="_blank" rel="noopener">GitHub 備援（分片）</a>
           <a class="btn btn-secondary" href="${esc(latest.release_url)}" target="_blank" rel="noopener">GitHub Release</a>
         </div>
         <p class="meta-line">SHA256: ${esc(latest.sha256)}</p>
-        ${latest.part_count ? `<p class="meta-line">GitHub 備援提供 ${latest.part_count} 個分片（需 join-iso.sh 合併）。CDN 可直接下載完整 ISO。</p>` : ''}
+        ${latest.part_count ? `<p class="meta-line">GitHub Releases 提供 ${latest.part_count} 個分片（需 join-iso.sh 合併後驗證 SHA256）。</p>` : ''}
       `;
     }
 

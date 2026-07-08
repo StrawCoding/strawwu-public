@@ -117,13 +117,17 @@ if dest_path.exists():
         known_versions = {e["version"] for e in entries}
         for old in existing.get("releases") or []:
             if old.get("status") == "withdrawn" and old.get("version") not in known_versions:
-                old["download_url"] = old.get("release_url") or old.get("download_url")
-                old.pop("iso_url", None)
-                entries.insert(0, old)
+                preserved = dict(old)
+                preserved["download_url"] = preserved.get("release_url") or preserved.get("download_url")
+                preserved.pop("iso_url", None)
+                entries.insert(0, preserved)
     except (json.JSONDecodeError, KeyError):
         pass
 
-latest = next((e["version"] for e in entries if e.get("status") != "withdrawn"), entries[0]["version"])
+latest = next(
+    (e["version"] for e in entries if e.get("status") != "withdrawn" and e.get("iso_published")),
+    next((e["version"] for e in entries if e.get("status") != "withdrawn"), entries[0]["version"]),
+)
 payload = {
     "schema": "strawwu-public-releases/v4",
     "updated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
