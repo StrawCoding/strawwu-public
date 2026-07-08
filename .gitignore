@@ -1,3 +1,4 @@
 *.iso
 .DS_Store
 node_modules/
+scripts/iso-cdn.env

@@ -212,13 +212,9 @@
       <p style="color:var(--muted);font-size:0.9rem;margin-bottom:0.75rem;">
         下載後請比對 SHA256，確保檔案完整未損壞。
       </p>
-      <pre id="verify-cmd"># 下載完整 ISO 後驗證
-sha256sum -c SHA256SUMS
-
-# GitHub 備援（分片）需先合併：
-# chmod +x join-iso.sh
-# ./join-iso.sh StrawWU-&lt;version&gt;-amd64.iso StrawWU-&lt;version&gt;-amd64.iso.*.part
-# sha256sum -c SHA256SUMS</pre>
+      <pre id="verify-cmd"># 下載完整 ISO 後驗證（單檔直連，無分片）
+curl -fsSLO https://github.com/StrawCoding/strawwu-public/releases/download/v&lt;version&gt;/SHA256SUMS
+sha256sum -c SHA256SUMS</pre>
     </section>
 
     <footer>
@@ -245,16 +241,12 @@ sha256sum -c SHA256SUMS
 
     function primaryDownloadUrl(latest) {
       if (latest.iso_url) return latest.iso_url;
-      if (latest.release_url) return latest.release_url;
-      if (latest.parts && latest.parts.length) {
-        const part = latest.parts.find(p => p.name.endsWith('.part'));
-        if (part) return part.url;
+      if (latest.download_url?.endsWith('.iso')) return latest.download_url;
+      if (latest.filename && latest.version) {
+        const base = (latest.iso_cdn_base || 'https://download.strawwu.org').replace(/\/$/, '');
+        return `${base}/releases/v${latest.version}/${latest.filename}`;
       }
-      if (latest.filename && latest.download_url) {
-        const base = latest.download_url.replace(/\/$/, '');
-        return `${base}/${latest.filename}`;
-      }
-      return latest.download_url;
+      return latest.release_url || latest.download_url;
     }
 
     function renderHero(latest) {
@@ -271,7 +263,7 @@ sha256sum -c SHA256SUMS
           <a class="btn btn-secondary" href="${esc(latest.release_url)}" target="_blank" rel="noopener">GitHub Release</a>
         </div>
         <p class="meta-line">SHA256: ${esc(latest.sha256)}</p>
-        ${latest.part_count ? `<p class="meta-line">GitHub Releases 提供 ${latest.part_count} 個分片（需 join-iso.sh 合併後驗證 SHA256）。</p>` : ''}
+        ${latest.has_full_iso ? '' : '<p class="meta-line">ISO 上傳至 CDN 後即可直連下載；目前請見 GitHub Release 說明。</p>'}
       `;
     }
 

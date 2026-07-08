@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Publish every local StrawWU ISO to GitHub Releases (chunked).
+# Publish every local StrawWU ISO to CDN (direct .iso) + GitHub Release metadata.
 set -euo pipefail
 
 ISO_DIR="${STRAWWU_ISO_DIR:-/mnt/data/code/project/StrawCoding/StrawWU/os-image/output}"
