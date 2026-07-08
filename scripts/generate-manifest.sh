@@ -69,7 +69,13 @@ def gh_release_assets(version: str):
 
 
 dest_path = Path(dest)
-withdrawn_meta = {}
+withdrawn_meta = {
+    "1.0.0.0": {
+        "status": "withdrawn",
+        "withdrawn_reason": "未經使用者授權發布；未完成 boot-test 與 install E2E 驗證，請勿使用",
+        "withdrawn_at": "2026-07-08T09:05:00Z",
+    },
+}
 if dest_path.exists():
     try:
         existing = json.loads(dest_path.read_text())
@@ -171,10 +177,10 @@ def version_key(v: str):
     return tuple(int(x) for x in v.split("."))
 
 active = [e for e in entries if e.get("status") != "withdrawn"]
-published = [e for e in active if e.get("iso_published")]
+released = [e for e in active if e.get("iso_published") or e.get("checksum_url")]
 latest = None
-if published:
-    latest = max((e["version"] for e in published), key=version_key)
+if released:
+    latest = max((e["version"] for e in released), key=version_key)
 elif active:
     latest = max((e["version"] for e in active), key=version_key)
 else:

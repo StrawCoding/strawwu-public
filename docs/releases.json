@@ -1,6 +1,6 @@
 {
   "schema": "strawwu-public-releases/v5",
-  "updated_at": "2026-07-08T11:45:51Z",
+  "updated_at": "2026-07-08T11:53:06Z",
   "latest": "0.6.2.5",
   "download_base": "https://download.strawwu.org",
   "pages_base": "https://strawcoding.github.io/strawwu-public",
@@ -15,12 +15,12 @@
       "size_human": "4.74 GiB",
       "sha256": "6e272f6d8ce9306c70a2712f87f0deb0c9fc6ffb48153540da03dc88e41ed691",
       "has_full_iso": false,
-      "download_url": "https://download.strawwu.org/releases/v1.0.0.0/StrawWU-1.0.0.0-amd64.iso",
+      "download_url": "https://github.com/StrawCoding/strawwu-public/releases/tag/v1.0.0.0",
       "release_url": "https://github.com/StrawCoding/strawwu-public/releases/tag/v1.0.0.0",
       "published_at": "2026-07-08T07:14:22Z",
-      "iso_url": "https://download.strawwu.org/releases/v1.0.0.0/StrawWU-1.0.0.0-amd64.iso",
-      "checksum_url": "https://download.strawwu.org/releases/v1.0.0.0/SHA256SUMS",
-      "iso_published": false
+      "status": "withdrawn",
+      "withdrawn_reason": "未經使用者授權發布；未完成 boot-test 與 install E2E 驗證，請勿使用",
+      "withdrawn_at": "2026-07-08T09:05:00Z"
     },
     {
       "version": "0.7.0.12",
@@ -32,9 +32,7 @@
       "download_url": "https://download.strawwu.org/releases/v0.7.0.12/StrawWU-0.7.0.12-amd64.iso",
       "release_url": "https://github.com/StrawCoding/strawwu-public/releases/tag/v0.7.0.12",
       "published_at": "2026-07-08T10:32:37Z",
-      "iso_url": "https://download.strawwu.org/releases/v0.7.0.12/StrawWU-0.7.0.12-amd64.iso",
-      "checksum_url": "https://download.strawwu.org/releases/v0.7.0.12/SHA256SUMS",
-      "iso_published": false
+      "iso_url": "https://download.strawwu.org/releases/v0.7.0.12/StrawWU-0.7.0.12-amd64.iso"
     },
     {
       "version": "0.6.2.5",
@@ -46,9 +44,9 @@
       "download_url": "https://download.strawwu.org/releases/v0.6.2.5/StrawWU-0.6.2.5-amd64.iso",
       "release_url": "https://github.com/StrawCoding/strawwu-public/releases/tag/v0.6.2.5",
       "published_at": "2026-07-07T19:20:45Z",
-      "checksum_url": "https://download.strawwu.org/releases/v0.6.2.5/SHA256SUMS",
-      "iso_published": false,
-      "iso_url": "https://download.strawwu.org/releases/v0.6.2.5/StrawWU-0.6.2.5-amd64.iso"
+      "iso_url": "https://download.strawwu.org/releases/v0.6.2.5/StrawWU-0.6.2.5-amd64.iso",
+      "checksum_url": "https://github.com/StrawCoding/strawwu-public/releases/download/v0.6.2.5/SHA256SUMS",
+      "iso_published": false
     },
     {
       "version": "0.6.1.5",
@@ -60,9 +58,9 @@
       "download_url": "https://download.strawwu.org/releases/v0.6.1.5/StrawWU-0.6.1.5-amd64.iso",
       "release_url": "https://github.com/StrawCoding/strawwu-public/releases/tag/v0.6.1.5",
       "published_at": "2026-07-07T20:34:07Z",
-      "checksum_url": "https://download.strawwu.org/releases/v0.6.1.5/SHA256SUMS",
-      "iso_published": false,
-      "iso_url": "https://download.strawwu.org/releases/v0.6.1.5/StrawWU-0.6.1.5-amd64.iso"
+      "iso_url": "https://download.strawwu.org/releases/v0.6.1.5/StrawWU-0.6.1.5-amd64.iso",
+      "checksum_url": "https://github.com/StrawCoding/strawwu-public/releases/download/v0.6.1.5/SHA256SUMS",
+      "iso_published": false
     },
     {
       "version": "0.6.1.4",
@@ -74,9 +72,9 @@
       "download_url": "https://download.strawwu.org/releases/v0.6.1.4/StrawWU-0.6.1.4-amd64.iso",
       "release_url": "https://github.com/StrawCoding/strawwu-public/releases/tag/v0.6.1.4",
       "published_at": "2026-07-07T20:55:06Z",
-      "checksum_url": "https://download.strawwu.org/releases/v0.6.1.4/SHA256SUMS",
-      "iso_published": false,
-      "iso_url": "https://download.strawwu.org/releases/v0.6.1.4/StrawWU-0.6.1.4-amd64.iso"
+      "iso_url": "https://download.strawwu.org/releases/v0.6.1.4/StrawWU-0.6.1.4-amd64.iso",
+      "checksum_url": "https://github.com/StrawCoding/strawwu-public/releases/download/v0.6.1.4/SHA256SUMS",
+      "iso_published": false
     },
     {
       "version": "0.5.0.7",
@@ -88,9 +86,9 @@
       "download_url": "https://download.strawwu.org/releases/v0.5.0.7/StrawWU-0.5.0.7-amd64.iso",
       "release_url": "https://github.com/StrawCoding/strawwu-public/releases/tag/v0.5.0.7",
       "published_at": "2026-07-07T21:18:17Z",
-      "checksum_url": "https://download.strawwu.org/releases/v0.5.0.7/SHA256SUMS",
-      "iso_published": false,
-      "iso_url": "https://download.strawwu.org/releases/v0.5.0.7/StrawWU-0.5.0.7-amd64.iso"
+      "iso_url": "https://download.strawwu.org/releases/v0.5.0.7/StrawWU-0.5.0.7-amd64.iso",
+      "checksum_url": "https://github.com/StrawCoding/strawwu-public/releases/download/v0.5.0.7/SHA256SUMS",
+      "iso_published": false
     },
     {
       "version": "0.5.0.6",
@@ -102,9 +100,9 @@
       "download_url": "https://download.strawwu.org/releases/v0.5.0.6/StrawWU-0.5.0.6-amd64.iso",
       "release_url": "https://github.com/StrawCoding/strawwu-public/releases/tag/v0.5.0.6",
       "published_at": "2026-07-07T21:47:32Z",
-      "checksum_url": "https://download.strawwu.org/releases/v0.5.0.6/SHA256SUMS",
-      "iso_published": false,
-      "iso_url": "https://download.strawwu.org/releases/v0.5.0.6/StrawWU-0.5.0.6-amd64.iso"
+      "iso_url": "https://download.strawwu.org/releases/v0.5.0.6/StrawWU-0.5.0.6-amd64.iso",
+      "checksum_url": "https://github.com/StrawCoding/strawwu-public/releases/download/v0.5.0.6/SHA256SUMS",
+      "iso_published": false
     },
     {
       "version": "0.5.0.5",
@@ -116,9 +114,9 @@
       "download_url": "https://download.strawwu.org/releases/v0.5.0.5/StrawWU-0.5.0.5-amd64.iso",
       "release_url": "https://github.com/StrawCoding/strawwu-public/releases/tag/v0.5.0.5",
       "published_at": "2026-07-07T22:16:54Z",
-      "checksum_url": "https://download.strawwu.org/releases/v0.5.0.5/SHA256SUMS",
-      "iso_published": false,
-      "iso_url": "https://download.strawwu.org/releases/v0.5.0.5/StrawWU-0.5.0.5-amd64.iso"
+      "iso_url": "https://download.strawwu.org/releases/v0.5.0.5/StrawWU-0.5.0.5-amd64.iso",
+      "checksum_url": "https://github.com/StrawCoding/strawwu-public/releases/download/v0.5.0.5/SHA256SUMS",
+      "iso_published": false
     },
     {
       "version": "0.4.1.4",
@@ -130,9 +128,9 @@
       "download_url": "https://download.strawwu.org/releases/v0.4.1.4/StrawWU-0.4.1.4-amd64.iso",
       "release_url": "https://github.com/StrawCoding/strawwu-public/releases/tag/v0.4.1.4",
       "published_at": "2026-07-07T23:07:18Z",
-      "checksum_url": "https://download.strawwu.org/releases/v0.4.1.4/SHA256SUMS",
-      "iso_published": false,
-      "iso_url": "https://download.strawwu.org/releases/v0.4.1.4/StrawWU-0.4.1.4-amd64.iso"
+      "iso_url": "https://download.strawwu.org/releases/v0.4.1.4/StrawWU-0.4.1.4-amd64.iso",
+      "checksum_url": "https://github.com/StrawCoding/strawwu-public/releases/download/v0.4.1.4/SHA256SUMS",
+      "iso_published": false
     },
     {
       "version": "0.4.1.33",
@@ -144,9 +142,9 @@
       "download_url": "https://download.strawwu.org/releases/v0.4.1.33/StrawWU-0.4.1.33-amd64.iso",
       "release_url": "https://github.com/StrawCoding/strawwu-public/releases/tag/v0.4.1.33",
       "published_at": "2026-07-07T22:47:29Z",
-      "checksum_url": "https://download.strawwu.org/releases/v0.4.1.33/SHA256SUMS",
-      "iso_published": false,
-      "iso_url": "https://download.strawwu.org/releases/v0.4.1.33/StrawWU-0.4.1.33-amd64.iso"
+      "iso_url": "https://download.strawwu.org/releases/v0.4.1.33/StrawWU-0.4.1.33-amd64.iso",
+      "checksum_url": "https://github.com/StrawCoding/strawwu-public/releases/download/v0.4.1.33/SHA256SUMS",
+      "iso_published": false
     },
     {
       "version": "0.4.0.1",
@@ -158,9 +156,9 @@
       "download_url": "https://download.strawwu.org/releases/v0.4.0.1/StrawWU-0.4.0.1-amd64.iso",
       "release_url": "https://github.com/StrawCoding/strawwu-public/releases/tag/v0.4.0.1",
       "published_at": "2026-07-07T23:32:43Z",
-      "checksum_url": "https://download.strawwu.org/releases/v0.4.0.1/SHA256SUMS",
-      "iso_published": false,
-      "iso_url": "https://download.strawwu.org/releases/v0.4.0.1/StrawWU-0.4.0.1-amd64.iso"
+      "iso_url": "https://download.strawwu.org/releases/v0.4.0.1/StrawWU-0.4.0.1-amd64.iso",
+      "checksum_url": "https://github.com/StrawCoding/strawwu-public/releases/download/v0.4.0.1/SHA256SUMS",
+      "iso_published": false
     },
     {
       "version": "0.4.0.0",
@@ -172,9 +170,9 @@
       "download_url": "https://download.strawwu.org/releases/v0.4.0.0/StrawWU-0.4.0.0-amd64.iso",
       "release_url": "https://github.com/StrawCoding/strawwu-public/releases/tag/v0.4.0.0",
       "published_at": "2026-07-07T23:58:27Z",
-      "checksum_url": "https://download.strawwu.org/releases/v0.4.0.0/SHA256SUMS",
-      "iso_published": false,
-      "iso_url": "https://download.strawwu.org/releases/v0.4.0.0/StrawWU-0.4.0.0-amd64.iso"
+      "iso_url": "https://download.strawwu.org/releases/v0.4.0.0/StrawWU-0.4.0.0-amd64.iso",
+      "checksum_url": "https://github.com/StrawCoding/strawwu-public/releases/download/v0.4.0.0/SHA256SUMS",
+      "iso_published": false
     },
     {
       "version": "0.3.0.0",
@@ -186,9 +184,9 @@
       "download_url": "https://download.strawwu.org/releases/v0.3.0.0/StrawWU-0.3.0.0-amd64.iso",
       "release_url": "https://github.com/StrawCoding/strawwu-public/releases/tag/v0.3.0.0",
       "published_at": "2026-07-08T00:21:41Z",
-      "checksum_url": "https://download.strawwu.org/releases/v0.3.0.0/SHA256SUMS",
-      "iso_published": false,
-      "iso_url": "https://download.strawwu.org/releases/v0.3.0.0/StrawWU-0.3.0.0-amd64.iso"
+      "iso_url": "https://download.strawwu.org/releases/v0.3.0.0/StrawWU-0.3.0.0-amd64.iso",
+      "checksum_url": "https://github.com/StrawCoding/strawwu-public/releases/download/v0.3.0.0/SHA256SUMS",
+      "iso_published": false
     }
   ]
 }
