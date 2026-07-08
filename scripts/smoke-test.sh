@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
-# Smoke test strawwu-public manifest and CDN / GitHub Release metadata.
+# Smoke test strawwu-public manifest (repo direct ISO or CDN).
 set -euo pipefail
 
 BASE="${STRAWWU_PUBLIC_BASE:-http://127.0.0.1:9106}"
-CDN_BASE="${STRAWWU_ISO_CDN_BASE:-https://download.strawwu.org}"
-GITHUB_DOWNLOAD_BASE="${STRAWWU_RELEASES_DOWNLOAD_BASE:-https://github.com/StrawCoding/strawwu-public/releases/download}"
 PAGES_URL="${STRAWWU_PAGES_URL:-https://strawcoding.github.io/strawwu-public}"
 REPO="${STRAWWU_PUBLIC_REPO:-StrawCoding/strawwu-public}"
 LATEST_TAG="${STRAWWU_LATEST_TAG:-v0.6.2.5}"
@@ -38,19 +36,20 @@ check "local releases.json" "curl -fsS '$BASE/releases.json' | python3 -c 'impor
 check "local branding icon svg" "curl -fsSI '$BASE/assets/branding/strawwu-icon.svg' | grep -q '200'"
 check "local branding lockup svg" "curl -fsSI '$BASE/assets/branding/strawwu-lockup.svg' | grep -q '200'"
 check "manifest no wastebase mirror" "! curl -fsS '$BASE/releases.json' | grep -q 'wastebase.xyz'"
+check "manifest schema v7" "curl -fsS '$BASE/releases.json' | grep -q 'strawwu-public-releases/v7'"
 check "manifest no split parts" "! curl -fsS '$BASE/releases.json' | grep -q '\\.part'"
-check "manifest schema v5" "curl -fsS '$BASE/releases.json' | grep -q 'strawwu-public-releases/v5'"
-check "manifest cdn base" "curl -fsS '$BASE/releases.json' | grep -q 'download.strawwu.org'"
-check "github release exists" "gh release view '$LATEST_TAG' --repo '$REPO' >/dev/null"
-check "github SHA256SUMS" "curl -fsSL '${GITHUB_DOWNLOAD_BASE}/${LATEST_TAG}/SHA256SUMS' | grep -q 'StrawWU-'"
 
-iso_head="$(curl -fsSI "${CDN_BASE}/releases/${LATEST_TAG}/StrawWU-${LATEST_VER}-amd64.iso" 2>/dev/null || true)"
-if echo "$iso_head" | grep -qi '200\|206' && echo "$iso_head" | grep -qi 'octet-stream\|iso9660\|binary'; then
-  check "cdn direct iso" "true"
-elif echo "$iso_head" | grep -qi '200\|206' && echo "$iso_head" | grep -qi 'text/html'; then
-  skip_check "cdn direct iso (CDN returns HTML placeholder — upload ISO to R2 first)"
+latest_json="$(curl -fsS "$BASE/releases.json")"
+if python3 -c "import json,sys; d=json.loads(sys.argv[1]); r=next(x for x in d['releases'] if x['version']==sys.argv[2]); sys.exit(0 if r.get('join_mode')=='direct' and r.get('iso_url') else 1)" "$latest_json" "$LATEST_VER" 2>/dev/null; then
+  check "manifest latest direct iso" "true"
+  iso_url="$(python3 -c "import json,sys; d=json.loads(sys.argv[1]); r=next(x for x in d['releases'] if x['version']==sys.argv[2]); print(r['iso_url'])" "$latest_json" "$LATEST_VER")"
+  if curl -fsSI "$iso_url" | grep -qi '200\|302'; then
+    check "latest iso url reachable" "true"
+  else
+    skip_check "latest iso url reachable ($iso_url)"
+  fi
 else
-  skip_check "cdn direct iso (upload pending — source scripts/iso-cdn.env && ./scripts/publish-github-release.sh ${LATEST_VER})"
+  skip_check "manifest latest direct iso (v${LATEST_VER} not published yet)"
 fi
 
 if curl -fsS "$PAGES_URL/releases.json" >/dev/null 2>&1; then

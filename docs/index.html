@@ -101,6 +101,29 @@
       color: #042f2e;
     }
     .btn-primary:hover { background: var(--teal-dim); text-decoration: none; }
+    .btn-primary:disabled { opacity: 0.6; cursor: wait; }
+    .progress {
+      margin-top: 1rem;
+      height: 6px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 999px;
+      overflow: hidden;
+      display: none;
+    }
+    .progress[aria-hidden="false"] { display: block; }
+    .progress > span {
+      display: block;
+      height: 100%;
+      width: 0;
+      background: var(--teal);
+      transition: width 0.2s ease;
+    }
+    .status-line {
+      margin-top: 0.75rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+      min-height: 1.25rem;
+    }
     .btn-secondary {
       background: transparent;
       color: var(--text);
@@ -183,7 +206,7 @@
       </div>
     </header>
 
-    <section class="hero" id="hero">
+    <section class="hero" id="download">
       <div class="loading" id="hero-loading">載入最新版本…</div>
     </section>
 
@@ -212,7 +235,7 @@
       <p style="color:var(--muted);font-size:0.9rem;margin-bottom:0.75rem;">
         下載後請比對 SHA256，確保檔案完整未損壞。
       </p>
-      <pre id="verify-cmd"># 下載完整 ISO 後驗證（單檔直連，無分片）
+      <pre id="verify-cmd"># 下載完整 ISO 後驗證
 curl -fsSLO https://github.com/StrawCoding/strawwu-public/releases/download/v&lt;version&gt;/SHA256SUMS
 sha256sum -c SHA256SUMS</pre>
     </section>
@@ -225,7 +248,7 @@ sha256sum -c SHA256SUMS</pre>
     </footer>
   </div>
 
-  <script>
+  <script type="module">
     const BASE = document.querySelector('meta[name="base-path"]')?.content || '';
     const MANIFEST = `${BASE}releases.json`.replace(/\/+/g, '/');
 
@@ -239,19 +262,35 @@ sha256sum -c SHA256SUMS</pre>
       return h ? h.slice(0, 12) + '…' : '—';
     }
 
-    function primaryDownloadUrl(latest) {
-      if (latest.iso_url) return latest.iso_url;
-      if (latest.download_url?.endsWith('.iso')) return latest.download_url;
-      if (latest.filename && latest.version) {
-        const base = (latest.iso_cdn_base || 'https://download.strawwu.org').replace(/\/$/, '');
-        return `${base}/releases/v${latest.version}/${latest.filename}`;
+    function pickRelease(data) {
+      const requested = new URLSearchParams(window.location.search).get('version');
+      if (requested) {
+        const found = data.releases.find((r) => r.version === requested);
+        if (found) return found;
       }
-      return latest.release_url || latest.download_url;
+      return data.releases.find((r) => r.version === data.latest) || data.releases[0];
+    }
+
+    function downloadLabel(release) {
+      if (release.iso_url) return `下載 ISO（${release.size_human}）`;
+      return '查看倉庫';
+    }
+
+    function startDownload(release) {
+      if (release.iso_url) {
+        window.open(release.iso_url, '_blank', 'noopener');
+        return;
+      }
+      window.open(release.release_url, '_blank', 'noopener');
     }
 
     function renderHero(latest) {
-      const dl = primaryDownloadUrl(latest);
-      const el = document.getElementById('hero');
+      const el = document.getElementById('download');
+      const storageHint = latest.storage === 'repo'
+        ? '<p class="meta-line">ISO 存放在 GitHub 倉庫 iso/（Git LFS，單一完整檔案）。</p>'
+        : latest.iso_url
+          ? '<p class="meta-line">ISO 直連下載（單一完整檔案，禁止分片）。</p>'
+          : '';
       el.innerHTML = `
         <span class="latest-badge">最新版本 v${esc(latest.version)}</span>
         <img class="hero-logo" src="assets/branding/strawwu-lockup.svg" width="384" height="256" alt="StrawWU" />
@@ -259,17 +298,29 @@ sha256sum -c SHA256SUMS</pre>
         <h1>下載 StrawWU ${esc(latest.version)}</h1>
         <p class="hero-lead">基於 Ubuntu 26.04 Resolute 的 Dual Runtime 桌面作業系統。支援 Live USB 與硬碟安裝（BIOS + UEFI）。</p>
         <div class="btn-row">
-          <a class="btn btn-primary" href="${esc(dl)}" target="_blank" rel="noopener">下載 ISO（${esc(latest.size_human)}）</a>
-          <a class="btn btn-secondary" href="${esc(latest.release_url)}" target="_blank" rel="noopener">GitHub Release</a>
+          <button class="btn btn-primary" id="download-btn" type="button">${esc(downloadLabel(latest))}</button>
+          <a class="btn btn-secondary" href="${esc(latest.release_url)}" target="_blank" rel="noopener">倉庫目錄</a>
         </div>
+        <p class="status-line" id="download-status"></p>
         <p class="meta-line">SHA256: ${esc(latest.sha256)}</p>
-        ${latest.has_full_iso ? '' : '<p class="meta-line">ISO 上傳至 CDN 後即可直連下載；目前請見 GitHub Release 說明。</p>'}
+        ${storageHint}
       `;
+      document.getElementById('download-btn').addEventListener('click', () => startDownload(latest));
+      const verify = document.getElementById('verify-cmd');
+      if (verify && latest.checksum_url) {
+        verify.textContent = `# 下載完整 ISO 後驗證
+curl -fsSLO ${latest.checksum_url}
+sha256sum -c SHA256SUMS`;
+      }
     }
 
     function renderTable(releases, latestVer) {
       const tbody = document.getElementById('releases-body');
-      tbody.innerHTML = releases.map(r => `
+      tbody.innerHTML = releases.map((r) => {
+        const action = r.status === 'withdrawn'
+          ? `<a href="${esc(r.release_url)}" target="_blank" rel="noopener">已撤回</a>`
+          : `<button type="button" class="btn btn-secondary" data-version="${esc(r.version)}" style="padding:0.35rem 0.75rem;font-size:0.8rem">下載</button>`;
+        return `
         <tr>
           <td>
             v${esc(r.version)}
@@ -278,26 +329,32 @@ sha256sum -c SHA256SUMS</pre>
           <td>${esc(r.filename)}</td>
           <td class="hide-sm">${esc(r.size_human)}</td>
           <td class="hide-sm" title="${esc(r.sha256)}"><span class="sha">${esc(shortSha(r.sha256))}</span></td>
-          <td><a href="${esc(r.iso_url || primaryDownloadUrl(r))}" target="_blank" rel="noopener">下載</a></td>
-        </tr>
-      `).join('');
+          <td>${action}</td>
+        </tr>`;
+      }).join('');
+
+      tbody.querySelectorAll('button[data-version]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const release = releases.find((r) => r.version === btn.dataset.version);
+          if (release) startDownload(release);
+        });
+      });
     }
 
     async function load() {
       try {
         const res = await fetch(MANIFEST);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        const latestVer = data.latest;
-        const latest = data.releases.find(r => r.version === latestVer) || data.releases[0];
+        manifestData = await res.json();
+        const latestVer = manifestData.latest;
+        const latest = pickRelease(manifestData);
         renderHero(latest);
-        renderTable(data.releases, latestVer);
+        renderTable(manifestData.releases, latestVer);
         document.getElementById('updated-at').textContent =
-          `清單更新：${data.updated_at || '—'}`;
-        const section = document.querySelector('section:nth-of-type(2)');
-        section.id = 'all-releases';
+          `清單更新：${manifestData.updated_at || '—'}`;
+        document.querySelector('section:nth-of-type(2)').id = 'all-releases';
       } catch (err) {
-        document.getElementById('hero').innerHTML =
+        document.getElementById('download').innerHTML =
           `<div class="error">無法載入 releases.json：${esc(err.message)}</div>`;
         document.getElementById('releases-body').innerHTML =
           `<tr><td colspan="5" class="error">載入失敗</td></tr>`;
