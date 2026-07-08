@@ -5,7 +5,6 @@ set -euo pipefail
 ISO_DIR="${STRAWWU_ISO_DIR:-/mnt/data/code/project/StrawCoding/StrawWU/os-image/output}"
 ISO_REPO_DIR="${STRAWWU_ISO_REPO_DIR:-$(dirname "$0")/../iso}"
 SF_MARKER_DIR="${STRAWWU_SF_MARKER_DIR:-$(dirname "$0")/../docs/sf-releases}"
-R2_MARKER_DIR="${STRAWWU_R2_MARKER_DIR:-$(dirname "$0")/../docs/r2-releases}"
 DEST="$(dirname "$0")/../docs/releases.json"
 GITHUB_REPO="${STRAWWU_PUBLIC_REPO:-StrawCoding/strawwu-public}"
 RAW_BASE="${STRAWWU_RAW_BASE:-https://media.githubusercontent.com/media/${GITHUB_REPO}}"
@@ -13,14 +12,13 @@ RELEASES_DOWNLOAD_BASE="${STRAWWU_RELEASES_DOWNLOAD_BASE:-https://github.com/${G
 PAGES_BASE="${STRAWWU_PAGES_BASE:-https://strawcoding.github.io/strawwu-public}"
 BRANCH="${STRAWWU_ISO_BRANCH:-main}"
 SF_CDN_BASE="${STRAWWU_SF_CDN_BASE:-https://sourceforge.net/projects}"
-R2_CDN_BASE="${STRAWWU_ISO_CDN_BASE:-https://pub-5f85d511d7344db2be8308026a082b13.r2.dev}"
 
 if [[ ! -d "$ISO_DIR" ]]; then
   echo "ISO directory not found: $ISO_DIR" >&2
   exit 1
 fi
 
-python3 - "$ISO_DIR" "$ISO_REPO_DIR" "$DEST" "$GITHUB_REPO" "$RAW_BASE" "$RELEASES_DOWNLOAD_BASE" "$PAGES_BASE" "$BRANCH" "$SF_MARKER_DIR" "$SF_CDN_BASE" "$R2_MARKER_DIR" "$R2_CDN_BASE" <<'PY'
+python3 - "$ISO_DIR" "$ISO_REPO_DIR" "$DEST" "$GITHUB_REPO" "$RAW_BASE" "$RELEASES_DOWNLOAD_BASE" "$PAGES_BASE" "$BRANCH" "$SF_MARKER_DIR" "$SF_CDN_BASE" <<'PY'
 import hashlib
 import json
 import re
@@ -39,41 +37,8 @@ pages_base = sys.argv[7].rstrip("/")
 branch = sys.argv[8]
 sf_marker_dir = Path(sys.argv[9])
 sf_cdn_base = sys.argv[10].rstrip("/")
-r2_marker_dir = Path(sys.argv[11])
-r2_cdn_base = sys.argv[12].rstrip("/")
 entries = []
 ver_re = re.compile(r"StrawWU-(\d+\.\d+\.\d+\.\d+)-amd64\.iso$")
-
-
-def r2_iso_assets(version: str):
-    marker = r2_marker_dir / f"v{version}.json"
-    if not marker.is_file():
-        return None
-    try:
-        data = json.loads(marker.read_text())
-    except (json.JSONDecodeError, OSError):
-        return None
-    iso_url = data.get("iso_url")
-    if not iso_url:
-        prefix = (data.get("prefix") or "releases").strip("/")
-        filename = data.get("filename") or f"StrawWU-{version}-amd64.iso"
-        iso_url = f"{r2_cdn_base}/{prefix}/v{version}/{filename}"
-    checksum_url = data.get("checksum_url")
-    if not checksum_url:
-        prefix = (data.get("prefix") or "releases").strip("/")
-        checksum_url = f"{r2_cdn_base}/{prefix}/v{version}/SHA256SUMS"
-    release_url = data.get("release_url") or f"https://github.com/{gh_repo}/releases/tag/v{version}"
-    return {
-        "published_at": data.get("published_at"),
-        "release_url": release_url,
-        "parts": [],
-        "part_assets": [],
-        "has_iso_parts": False,
-        "full_iso_url": iso_url,
-        "checksum_url": checksum_url,
-        "source": "r2",
-        "prefer_direct": True,
-    }
 
 
 def sf_iso_assets(version: str):
@@ -187,8 +152,8 @@ def gh_release_assets(version: str):
 
 
 def resolve_publish_assets(version: str):
-    # Prefer whole-file CDN (R2 / SourceForge) over repo LFS parts or GH release parts.
-    for resolver in (r2_iso_assets, sf_iso_assets, repo_iso_assets, gh_release_assets):
+    # GitHub Release chunked assets are the canonical download source.
+    for resolver in (gh_release_assets, sf_iso_assets, repo_iso_assets):
         rel = resolver(version)
         if rel:
             return rel
@@ -309,10 +274,9 @@ payload = {
     "download_base": download_base,
     "pages_base": pages_base,
     "raw_base": raw_base,
-    "r2_base": r2_cdn_base,
     "sourceforge_base": sf_cdn_base,
     "github_repo": gh_repo,
-    "iso_policy": "whole-file-preferred",
+    "iso_policy": "release-chunked",
     "releases": entries,
 }
 Path(dest).write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n")
