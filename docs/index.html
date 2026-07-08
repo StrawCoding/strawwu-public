@@ -243,7 +243,7 @@ sha256sum -c SHA256SUMS</pre>
     <footer>
       <p>StrawWU by <a href="https://strawwu.org/">StrawWU</a> ·
       <a href="https://strawcoding.github.io/strawwu-public/">strawwu-public</a> ·
-      <a href="https://github.com/StrawCoding/strawwu-public/tree/main/iso">GitHub 倉庫 iso/</a></p>
+      <a href="https://sourceforge.net/">SourceForge</a>（整包 ISO）</p>
       <p style="margin-top:0.5rem" id="updated-at"></p>
     </footer>
   </div>
@@ -270,7 +270,20 @@ sha256sum -c SHA256SUMS</pre>
         const found = data.releases.find((r) => r.version === requested);
         if (found) return found;
       }
-      return data.releases.find((r) => r.version === data.latest) || data.releases[0];
+      const latest = data.releases.find((r) => r.version === data.latest);
+      if (latest?.iso_published || latest?.has_full_iso) return latest;
+      if (data.latest_published) {
+        const published = data.releases.find((r) => r.version === data.latest_published);
+        if (published) return published;
+      }
+      return latest || data.releases[0];
+    }
+
+    function heroVersionLabel(data, release) {
+      if (data.latest && release.version !== data.latest) {
+        return `最新可下載 v${release.version}（建置中：v${data.latest}）`;
+      }
+      return `最新版本 v${release.version}`;
     }
 
     function downloadLabel(release) {
@@ -313,33 +326,36 @@ sha256sum -c SHA256SUMS</pre>
       }
     }
 
-    function renderHero(latest) {
+    function renderHero(data, release) {
       const el = document.getElementById('download');
-      const storageHint = canBrowserJoin(latest) && !latest.iso_url
+      const storageHint = release.storage === 'sourceforge' && release.iso_url
+        ? '<p class="meta-line">ISO 整包存放於 SourceForge（單一完整檔案，不分片）。</p>'
+        : canBrowserJoin(release) && !release.iso_url
         ? '<p class="meta-line">ISO 存放在 GitHub 倉庫 iso/；此頁會抓取分片並合併成單一 .iso 檔。</p>'
-        : latest.iso_url
+        : release.iso_url
           ? '<p class="meta-line">ISO 直連下載（單一完整檔案）。</p>'
           : '';
+      const secondaryLabel = release.storage === 'sourceforge' ? 'SourceForge 目錄' : '倉庫目錄';
       el.innerHTML = `
-        <span class="latest-badge">最新版本 v${esc(latest.version)}</span>
+        <span class="latest-badge">${esc(heroVersionLabel(data, release))}</span>
         <img class="hero-logo" src="assets/branding/strawwu-lockup.svg" width="384" height="256" alt="StrawWU" />
         <p class="kicker">StrawWU Public Release</p>
-        <h1>下載 StrawWU ${esc(latest.version)}</h1>
+        <h1>下載 StrawWU ${esc(release.version)}</h1>
         <p class="hero-lead">基於 Ubuntu 26.04 Resolute 的 Dual Runtime 桌面作業系統。支援 Live USB 與硬碟安裝（BIOS + UEFI）。</p>
         <div class="btn-row">
-          <button class="btn btn-primary" id="download-btn" type="button">${esc(downloadLabel(latest))}</button>
-          <a class="btn btn-secondary" href="${esc(latest.release_url)}" target="_blank" rel="noopener">倉庫目錄</a>
+          <button class="btn btn-primary" id="download-btn" type="button">${esc(downloadLabel(release))}</button>
+          <a class="btn btn-secondary" href="${esc(release.release_url)}" target="_blank" rel="noopener">${secondaryLabel}</a>
         </div>
         <div class="progress" id="download-progress" aria-hidden="true"><span id="download-progress-bar"></span></div>
         <p class="status-line" id="download-status"></p>
-        <p class="meta-line">SHA256: ${esc(latest.sha256)}</p>
+        <p class="meta-line">SHA256: ${esc(release.sha256)}</p>
         ${storageHint}
       `;
-      document.getElementById('download-btn').addEventListener('click', () => startDownload(latest));
+      document.getElementById('download-btn').addEventListener('click', () => startDownload(release));
       const verify = document.getElementById('verify-cmd');
-      if (verify && latest.checksum_url) {
+      if (verify && release.checksum_url) {
         verify.textContent = `# 下載完整 ISO 後驗證
-curl -fsSLO ${latest.checksum_url}
+curl -fsSLO ${release.checksum_url}
 sha256sum -c SHA256SUMS`;
       }
     }
@@ -377,8 +393,8 @@ sha256sum -c SHA256SUMS`;
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         const latestVer = data.latest;
-        const latest = pickRelease(data);
-        renderHero(latest);
+        const release = pickRelease(data);
+        renderHero(data, release);
         renderTable(data.releases, latestVer);
         document.getElementById('updated-at').textContent =
           `清單更新：${data.updated_at || '—'}`;

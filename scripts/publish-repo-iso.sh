@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
-# Publish StrawWU ISO into the git repository (iso/v<version>/ via Git LFS).
-# GitHub LFS caps each object at 2 GiB on Free/Pro — larger ISOs are stored as
-# ordered parts in iso/v<version>/; the download page merges them into one .iso.
+# LEGACY / FALLBACK ONLY.
+# Preferred path: scripts/publish-sourceforge.sh (whole ISO, no split).
+# GitHub LFS Free/Pro caps objects at 2 GiB — this script splits large ISOs into
+# ordered parts under iso/v<version>/ for browser join. Do not use when
+# SourceForge credentials are available.
 set -euo pipefail
+echo "WARN: prefer scripts/publish-sourceforge.sh for whole-file ISO uploads" >&2
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 ISO_DIR="${STRAWWU_ISO_DIR:-/mnt/data/code/project/StrawCoding/StrawWU/os-image/output}"
@@ -13,8 +16,10 @@ VERSION="${1:-}"
 SKIP_PUSH="${STRAWWU_SKIP_REPO_PUSH:-0}"
 
 if [[ -z "$VERSION" ]]; then
-  latest="$(ls -1t "$ISO_DIR"/StrawWU-*.iso 2>/dev/null | head -1)"
-  VERSION="$(basename "$latest" | sed -n 's/StrawWU-\(.*\)-amd64\.iso/\1/p')"
+  VERSION="$(ls -1 "$ISO_DIR"/StrawWU-*.iso 2>/dev/null \
+    | sed -n 's|.*/StrawWU-\(.*\)-amd64\.iso|\1|p' \
+    | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n \
+    | tail -1)"
 fi
 
 [[ -n "$VERSION" ]] || { echo "Usage: $0 [version]" >&2; exit 1; }

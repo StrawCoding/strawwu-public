@@ -3,3 +3,4 @@
 .DS_Store
 node_modules/
 scripts/iso-cdn.env
+scripts/iso-sourceforge.env

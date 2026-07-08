@@ -19,8 +19,10 @@ S3_SECRET_KEY="${STRAWWU_ISO_S3_SECRET_KEY:-${AWS_SECRET_ACCESS_KEY:-}}"
 S3_REGION="${STRAWWU_ISO_S3_REGION:-auto}"
 
 if [[ -z "$VERSION" ]]; then
-  latest="$(ls -1t "$ISO_DIR"/StrawWU-*.iso 2>/dev/null | head -1)"
-  VERSION="$(basename "$latest" | sed -n 's/StrawWU-\(.*\)-amd64\.iso/\1/p')"
+  VERSION="$(ls -1 "$ISO_DIR"/StrawWU-*.iso 2>/dev/null \
+    | sed -n 's|.*/StrawWU-\(.*\)-amd64\.iso|\1|p' \
+    | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n \
+    | tail -1)"
 fi
 
 [[ -n "$VERSION" ]] || { echo "Usage: $0 [version]" >&2; exit 1; }

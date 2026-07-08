@@ -35,13 +35,27 @@ check "local branding icon svg" "curl -fsSI '$BASE/assets/branding/strawwu-icon.
 check "local branding lockup svg" "curl -fsSI '$BASE/assets/branding/strawwu-lockup.svg' | grep -q '200'"
 check "manifest no wastebase mirror" "! curl -fsS '$BASE/releases.json' | grep -q 'wastebase.xyz'"
 check "manifest no local cdn" "! curl -fsS '$BASE/releases.json' | grep -q 'download.strawwu.org'"
-check "manifest schema v7" "curl -fsS '$BASE/releases.json' | grep -q 'strawwu-public-releases/v7'"
-check "manifest media github base" "curl -fsS '$BASE/releases.json' | grep -q 'media.githubusercontent.com'"
+check "manifest schema v8" "curl -fsS '$BASE/releases.json' | grep -q 'strawwu-public-releases/v8'"
+check "manifest whole-file policy" "curl -fsS '$BASE/releases.json' | grep -q 'whole-file-preferred'"
 
 latest_json="$(curl -fsS "$BASE/releases.json")"
 LATEST_VER="$(python3 -c "import json,sys; print(json.loads(sys.argv[1])['latest'])" "$latest_json")"
+DOWNLOAD_VER="$(python3 -c "
+import json,sys
+d=json.loads(sys.argv[1])
+lp=d.get('latest_published')
+print(lp if lp else d['latest'])
+" "$latest_json")"
 
-if python3 -c "import json,sys; d=json.loads(sys.argv[1]); r=next(x for x in d['releases'] if x['version']==sys.argv[2]); sys.exit(0 if r.get('iso_published') or r.get('has_full_iso') else 1)" "$latest_json" "$LATEST_VER" 2>/dev/null; then
+check "manifest latest is highest build" "python3 -c \"
+import json,sys
+d=json.loads(sys.argv[1])
+vers=[r['version'] for r in d['releases'] if r.get('status')!='withdrawn']
+def vk(v): return tuple(int(x) for x in v.split('.'))
+assert d['latest']==max(vers, key=vk)
+\" '$latest_json'"
+
+if python3 -c "import json,sys; d=json.loads(sys.argv[1]); r=next(x for x in d['releases'] if x['version']==sys.argv[2]); sys.exit(0 if r.get('iso_published') or r.get('has_full_iso') else 1)" "$latest_json" "$DOWNLOAD_VER" 2>/dev/null; then
   check "manifest latest published" "true"
   part_url="$(python3 -c "
 import json,sys
@@ -53,18 +67,18 @@ if parts:
     print(next(p['url'] for p in parts if p['name'].endswith('.part')))
 elif iso:
     print(iso)
-" "$latest_json" "$LATEST_VER" 2>/dev/null || true)"
+" "$latest_json" "$DOWNLOAD_VER" 2>/dev/null || true)"
   if [[ -n "$part_url" ]] && curl -fsSI "$part_url" | grep -qi '200\|302'; then
     check "latest iso asset reachable" "true"
   else
     skip_check "latest iso asset reachable (push LFS first: $part_url)"
   fi
 else
-  skip_check "manifest latest published (v${LATEST_VER})"
+  skip_check "manifest latest published (v${DOWNLOAD_VER})"
 fi
 
-if [[ -d "$(dirname "$0")/../iso/v${LATEST_VER}" ]]; then
-  check "local iso/v${LATEST_VER} exists" "test -d '$(dirname "$0")/../iso/v${LATEST_VER}'"
+if [[ -d "$(dirname "$0")/../iso/v${DOWNLOAD_VER}" ]]; then
+  check "local iso/v${DOWNLOAD_VER} exists" "test -d '$(dirname "$0")/../iso/v${DOWNLOAD_VER}'"
 fi
 
 if curl -fsS "$PAGES_URL/releases.json" >/dev/null 2>&1; then

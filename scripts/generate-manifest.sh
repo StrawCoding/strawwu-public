@@ -4,19 +4,21 @@ set -euo pipefail
 
 ISO_DIR="${STRAWWU_ISO_DIR:-/mnt/data/code/project/StrawCoding/StrawWU/os-image/output}"
 ISO_REPO_DIR="${STRAWWU_ISO_REPO_DIR:-$(dirname "$0")/../iso}"
+SF_MARKER_DIR="${STRAWWU_SF_MARKER_DIR:-$(dirname "$0")/../docs/sf-releases}"
 DEST="$(dirname "$0")/../docs/releases.json"
 GITHUB_REPO="${STRAWWU_PUBLIC_REPO:-StrawCoding/strawwu-public}"
 RAW_BASE="${STRAWWU_RAW_BASE:-https://media.githubusercontent.com/media/${GITHUB_REPO}}"
 RELEASES_DOWNLOAD_BASE="${STRAWWU_RELEASES_DOWNLOAD_BASE:-https://github.com/${GITHUB_REPO}/releases/download}"
 PAGES_BASE="${STRAWWU_PAGES_BASE:-https://strawcoding.github.io/strawwu-public}"
 BRANCH="${STRAWWU_ISO_BRANCH:-main}"
+SF_CDN_BASE="${STRAWWU_SF_CDN_BASE:-https://sourceforge.net/projects}"
 
 if [[ ! -d "$ISO_DIR" ]]; then
   echo "ISO directory not found: $ISO_DIR" >&2
   exit 1
 fi
 
-python3 - "$ISO_DIR" "$ISO_REPO_DIR" "$DEST" "$GITHUB_REPO" "$RAW_BASE" "$RELEASES_DOWNLOAD_BASE" "$PAGES_BASE" "$BRANCH" <<'PY'
+python3 - "$ISO_DIR" "$ISO_REPO_DIR" "$DEST" "$GITHUB_REPO" "$RAW_BASE" "$RELEASES_DOWNLOAD_BASE" "$PAGES_BASE" "$BRANCH" "$SF_MARKER_DIR" "$SF_CDN_BASE" <<'PY'
 import hashlib
 import json
 import re
@@ -33,8 +35,50 @@ raw_base = sys.argv[5].rstrip("/")
 releases_download_base = sys.argv[6].rstrip("/")
 pages_base = sys.argv[7].rstrip("/")
 branch = sys.argv[8]
+sf_marker_dir = Path(sys.argv[9])
+sf_cdn_base = sys.argv[10].rstrip("/")
 entries = []
 ver_re = re.compile(r"StrawWU-(\d+\.\d+\.\d+\.\d+)-amd64\.iso$")
+
+
+def sf_iso_assets(version: str):
+    marker = sf_marker_dir / f"v{version}.json"
+    if not marker.is_file():
+        return None
+    try:
+        data = json.loads(marker.read_text())
+    except (json.JSONDecodeError, OSError):
+        return None
+    iso_url = data.get("iso_url")
+    if not iso_url:
+        project = data.get("project")
+        prefix = data.get("prefix") or "releases"
+        filename = data.get("filename") or f"StrawWU-{version}-amd64.iso"
+        if not project:
+            return None
+        iso_url = f"{sf_cdn_base}/{project}/files/{prefix}/v{version}/{filename}/download"
+    checksum_url = data.get("checksum_url")
+    if not checksum_url and data.get("project"):
+        prefix = data.get("prefix") or "releases"
+        checksum_url = (
+            f"{sf_cdn_base}/{data['project']}/files/{prefix}/v{version}/SHA256SUMS/download"
+        )
+    release_url = data.get("release_url") or (
+        f"{sf_cdn_base}/{data['project']}/files/{data.get('prefix') or 'releases'}/v{version}/"
+        if data.get("project")
+        else None
+    )
+    return {
+        "published_at": data.get("published_at"),
+        "release_url": release_url,
+        "parts": [],
+        "part_assets": [],
+        "has_iso_parts": False,
+        "full_iso_url": iso_url,
+        "checksum_url": checksum_url,
+        "source": "sourceforge",
+        "prefer_direct": True,
+    }
 
 
 def repo_iso_assets(version: str):
@@ -107,6 +151,11 @@ def gh_release_assets(version: str):
     }
 
 
+def resolve_publish_assets(version: str):
+    # SourceForge whole-file ISO wins over GitHub LFS split parts.
+    return sf_iso_assets(version) or repo_iso_assets(version) or gh_release_assets(version)
+
+
 dest_path = Path(dest)
 withdrawn_meta = {}
 existing_sha = {}
@@ -155,7 +204,7 @@ for path in sorted(iso_dir.glob("StrawWU-*.iso"), key=lambda p: p.name, reverse=
                 h.update(chunk)
         sha256 = h.hexdigest()
 
-    rel = repo_iso_assets(version) or gh_release_assets(version)
+    rel = resolve_publish_assets(version)
 
     release_url = rel["release_url"] if rel else f"https://github.com/{gh_repo}/tree/{branch}/iso/v{version}"
     entry = {
@@ -207,21 +256,25 @@ def version_key(v: str):
 
 active = [e for e in entries if e.get("status") != "withdrawn"]
 published = [e for e in active if e.get("iso_published") or e.get("has_full_iso")]
-if published:
-    latest = max((e["version"] for e in published), key=version_key)
-elif active:
+if active:
     latest = max((e["version"] for e in active), key=version_key)
 else:
     latest = entries[0]["version"]
+latest_published = (
+    max((e["version"] for e in published), key=version_key) if published else None
+)
 
 payload = {
-    "schema": "strawwu-public-releases/v7",
+    "schema": "strawwu-public-releases/v8",
     "updated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
     "latest": latest,
-    "download_base": raw_base,
+    "latest_published": latest_published,
+    "download_base": sf_cdn_base if any(e.get("storage") == "sourceforge" for e in entries) else raw_base,
     "pages_base": pages_base,
     "raw_base": raw_base,
+    "sourceforge_base": sf_cdn_base,
     "github_repo": gh_repo,
+    "iso_policy": "whole-file-preferred",
     "releases": entries,
 }
 Path(dest).write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n")
