@@ -70,7 +70,7 @@ sha256sum -c SHA256SUMS
 
 ${parts_md}
 
-Web: https://download.strawwu.org/
+Web: https://strawcoding.github.io/strawwu-public/
 GitHub: https://github.com/${REPO}/releases/tag/${tag}
 EOF
 

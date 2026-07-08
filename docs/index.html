@@ -212,17 +212,19 @@
       <p style="color:var(--muted);font-size:0.9rem;margin-bottom:0.75rem;">
         下載後請比對 SHA256，確保檔案完整未損壞。
       </p>
-      <pre id="verify-cmd"># 從 GitHub Release 下載全部 .part、SHA256SUMS、join-iso.sh
-# 例：https://github.com/StrawCoding/strawwu-public/releases/tag/v0.6.2.5
-chmod +x join-iso.sh
-./join-iso.sh StrawWU-&lt;version&gt;-amd64.iso StrawWU-&lt;version&gt;-amd64.iso.*.part
-sha256sum -c SHA256SUMS</pre>
+      <pre id="verify-cmd"># 下載完整 ISO 後驗證
+sha256sum -c SHA256SUMS
+
+# GitHub 備援（分片）需先合併：
+# chmod +x join-iso.sh
+# ./join-iso.sh StrawWU-&lt;version&gt;-amd64.iso StrawWU-&lt;version&gt;-amd64.iso.*.part
+# sha256sum -c SHA256SUMS</pre>
     </section>
 
     <footer>
       <p>StrawWU by <a href="https://strawwu.org/">StrawWU</a> ·
-      <a href="https://download.strawwu.org/">download.strawwu.org</a> ·
-      <a href="https://github.com/StrawCoding/strawwu-public">GitHub Releases</a></p>
+      <a href="https://strawcoding.github.io/strawwu-public/">strawwu-public</a> ·
+      <a href="https://github.com/StrawCoding/strawwu-public/releases">GitHub Releases</a></p>
       <p style="margin-top:0.5rem" id="updated-at"></p>
     </footer>
   </div>
@@ -242,6 +244,11 @@ sha256sum -c SHA256SUMS</pre>
     }
 
     function primaryDownloadUrl(latest) {
+      if (latest.iso_url) return latest.iso_url;
+      if (latest.filename && latest.download_url) {
+        const base = latest.download_url.replace(/\/$/, '');
+        return `${base}/${latest.filename}`;
+      }
       if (latest.parts && latest.parts.length) {
         const part = latest.parts.find(p => p.name.endsWith('.part'));
         if (part) return part.url;
@@ -259,12 +266,12 @@ sha256sum -c SHA256SUMS</pre>
         <h1>下載 StrawWU ${esc(latest.version)}</h1>
         <p class="hero-lead">基於 Ubuntu 26.04 Resolute 的 Dual Runtime 桌面作業系統。支援 Live USB 與硬碟安裝（BIOS + UEFI）。</p>
         <div class="btn-row">
-          <a class="btn btn-primary" href="${esc(dl)}" target="_blank" rel="noopener">下載 ISO（${esc(latest.size_human)}${latest.part_count ? ` · ${latest.part_count} 個分片` : ''}）</a>
-          <a class="btn btn-secondary" href="${esc(latest.release_url)}" target="_blank" rel="noopener">GitHub 下載檔案</a>
+          <a class="btn btn-primary" href="${esc(dl)}" target="_blank" rel="noopener">下載 ISO（${esc(latest.size_human)}）</a>
+          <a class="btn btn-secondary" href="${esc(latest.release_url)}" target="_blank" rel="noopener">GitHub 備援（分片）</a>
           <a class="btn btn-secondary" href="${esc(latest.release_url)}" target="_blank" rel="noopener">GitHub Release</a>
         </div>
         <p class="meta-line">SHA256: ${esc(latest.sha256)}</p>
-        ${latest.part_count ? `<p class="meta-line">請從 <a href="${esc(latest.release_url)}" target="_blank" rel="noopener">GitHub Release</a> 下載全部 .part 後執行 join-iso.sh 合併。</p>` : ''}
+        ${latest.part_count ? `<p class="meta-line">GitHub 備援提供 ${latest.part_count} 個分片（需 join-iso.sh 合併）。CDN 可直接下載完整 ISO。</p>` : ''}
       `;
     }
 
@@ -279,7 +286,7 @@ sha256sum -c SHA256SUMS</pre>
           <td>${esc(r.filename)}</td>
           <td class="hide-sm">${esc(r.size_human)}</td>
           <td class="hide-sm" title="${esc(r.sha256)}"><span class="sha">${esc(shortSha(r.sha256))}</span></td>
-          <td><a href="${esc(r.release_url)}" target="_blank" rel="noopener">下載</a></td>
+          <td><a href="${esc(r.iso_url || primaryDownloadUrl(r))}" target="_blank" rel="noopener">下載</a></td>
         </tr>
       `).join('');
     }

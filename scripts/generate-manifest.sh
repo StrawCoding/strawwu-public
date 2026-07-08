@@ -5,14 +5,15 @@ set -euo pipefail
 ISO_DIR="${STRAWWU_ISO_DIR:-/mnt/data/code/project/StrawCoding/StrawWU/os-image/output}"
 DEST="$(dirname "$0")/../docs/releases.json"
 GITHUB_REPO="${STRAWWU_PUBLIC_REPO:-StrawCoding/strawwu-public}"
-DOWNLOAD_BASE="${STRAWWU_DOWNLOAD_BASE:-https://download.strawwu.org}"
+RELEASES_DOWNLOAD_BASE="${STRAWWU_RELEASES_DOWNLOAD_BASE:-https://github.com/${GITHUB_REPO}/releases/download}"
+PAGES_BASE="${STRAWWU_PAGES_BASE:-https://strawcoding.github.io/strawwu-public}"
 
 if [[ ! -d "$ISO_DIR" ]]; then
   echo "ISO directory not found: $ISO_DIR" >&2
   exit 1
 fi
 
-python3 - "$ISO_DIR" "$DEST" "$GITHUB_REPO" "$DOWNLOAD_BASE" <<'PY'
+python3 - "$ISO_DIR" "$DEST" "$GITHUB_REPO" "$RELEASES_DOWNLOAD_BASE" "$PAGES_BASE" <<'PY'
 import json, re, subprocess, sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -20,8 +21,8 @@ from pathlib import Path
 iso_dir = Path(sys.argv[1])
 dest = sys.argv[2]
 gh_repo = sys.argv[3]
-download_base = sys.argv[4].rstrip("/")
-releases_download_base = f"https://github.com/{gh_repo}/releases/download"
+releases_download_base = sys.argv[4].rstrip("/")
+pages_base = sys.argv[5].rstrip("/")
 entries = []
 ver_re = re.compile(r"StrawWU-(\d+\.\d+\.\d+\.\d+)-amd64\.iso$")
 
@@ -37,10 +38,13 @@ def gh_release_assets(version: str):
     except subprocess.CalledProcessError:
         return None
     assets = []
+    full_iso_url = None
     for asset in data.get("assets") or []:
         name = asset.get("name") or ""
+        url = asset.get("url") or f"{releases_download_base}/{tag}/{name}"
+        if name.endswith(".iso") and not name.endswith(".part"):
+            full_iso_url = url
         if name.endswith(".part") or name in ("join-iso.sh", "SHA256SUMS", "SHA256SUMS.asc"):
-            url = f"{download_base}/{tag}/{name}"
             assets.append({
                 "name": name,
                 "url": url,
@@ -52,6 +56,7 @@ def gh_release_assets(version: str):
         "release_url": data.get("url") or f"https://github.com/{gh_repo}/releases/tag/{tag}",
         "parts": assets,
         "has_iso_parts": any(a["name"].endswith(".part") for a in assets),
+        "full_iso_url": full_iso_url,
     }
 
 for path in sorted(iso_dir.glob("StrawWU-*.iso"), key=lambda p: p.name, reverse=True):
@@ -85,10 +90,13 @@ for path in sorted(iso_dir.glob("StrawWU-*.iso"), key=lambda p: p.name, reverse=
         "size": size,
         "size_human": f"{size / (1024**3):.2f} GiB",
         "sha256": sha256,
-        "download_url": f"{download_base}/{tag}/",
+        "has_full_iso": bool(rel and rel.get("full_iso_url")),
+        "download_url": release_url,
         "release_url": release_url,
         "published_at": datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
     }
+    if rel and rel.get("full_iso_url"):
+        entry["iso_url"] = rel["full_iso_url"]
     if rel:
         if rel.get("published_at"):
             entry["published_at"] = rel["published_at"]
@@ -101,12 +109,27 @@ for path in sorted(iso_dir.glob("StrawWU-*.iso"), key=lambda p: p.name, reverse=
 if not entries:
     raise SystemExit(f"No ISO files found in {iso_dir}")
 
-latest = entries[0]["version"]
+# Preserve manually curated withdrawn releases from existing manifest.
+dest_path = Path(dest)
+if dest_path.exists():
+    try:
+        existing = json.loads(dest_path.read_text())
+        known_versions = {e["version"] for e in entries}
+        for old in existing.get("releases") or []:
+            if old.get("status") == "withdrawn" and old.get("version") not in known_versions:
+                old["download_url"] = old.get("release_url") or old.get("download_url")
+                old.pop("iso_url", None)
+                entries.insert(0, old)
+    except (json.JSONDecodeError, KeyError):
+        pass
+
+latest = next((e["version"] for e in entries if e.get("status") != "withdrawn"), entries[0]["version"])
 payload = {
-    "schema": "strawwu-public-releases/v2",
+    "schema": "strawwu-public-releases/v4",
     "updated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
     "latest": latest,
-    "download_base": download_base,
+    "download_base": releases_download_base,
+    "pages_base": pages_base,
     "releases_download_base": releases_download_base,
     "github_repo": gh_repo,
     "releases": entries,
