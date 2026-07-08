@@ -1,0 +1,12 @@
+{
+  "version": "0.7.0.13",
+  "filename": "StrawWU-0.7.0.13-amd64.iso",
+  "size": 5693546496,
+  "sha256": "08f492ddd35184c3d4be4be4af3c152d626e27f865fb92a2814cd5c58d69ddff",
+  "iso_url": "https://pub-5f85d511d7344db2be8308026a082b13.r2.dev/releases/v0.7.0.13/StrawWU-0.7.0.13-amd64.iso",
+  "checksum_url": "https://pub-5f85d511d7344db2be8308026a082b13.r2.dev/releases/v0.7.0.13/SHA256SUMS",
+  "release_url": "https://github.com/StrawCoding/strawwu-public/releases/tag/v0.7.0.13",
+  "prefix": "releases",
+  "storage": "r2",
+  "published_at": "2026-07-08T16:41:03Z"
+}

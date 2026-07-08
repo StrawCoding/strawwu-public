@@ -1,5 +1,5 @@
 /**
- * Download a complete StrawWU ISO from git repo / GitHub Release parts.
+ * Download a complete StrawWU ISO from GitHub Release parts.
  * Uses the File System Access API when available; falls back to release page.
  */
 export function isoParts(release) {

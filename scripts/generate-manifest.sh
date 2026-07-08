@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Generate docs/releases.json from local ISO directory + repo iso/ tree.
+# Generate docs/releases.json from local ISO builds + GitHub Release assets.
 set -euo pipefail
 
 ISO_DIR="${STRAWWU_ISO_DIR:-/mnt/data/code/project/StrawCoding/StrawWU/os-image/output}"
@@ -187,13 +187,12 @@ def gh_release_assets(version: str):
 
 
 def resolve_publish_assets(version: str):
-    # R2 whole-file ISO wins; then SourceForge; then repo/LFS or GitHub Release assets.
-    return (
-        r2_iso_assets(version)
-        or sf_iso_assets(version)
-        or repo_iso_assets(version)
-        or gh_release_assets(version)
-    )
+    # Prefer whole-file CDN (R2 / SourceForge) over repo LFS parts or GH release parts.
+    for resolver in (r2_iso_assets, sf_iso_assets, repo_iso_assets, gh_release_assets):
+        rel = resolver(version)
+        if rel:
+            return rel
+    return None
 
 
 dest_path = Path(dest)
@@ -222,14 +221,7 @@ for path in sorted(iso_dir.glob("StrawWU-*.iso"), key=lambda p: p.name, reverse=
     size = path.stat().st_size
     sha_path = Path(iso_dir) / "SHA256SUMS"
     sha256 = None
-    repo_sha = iso_repo_dir / f"v{version}" / "SHA256SUMS"
-    if repo_sha.exists():
-        for line in repo_sha.read_text().splitlines():
-            parts = line.split()
-            if len(parts) >= 2 and parts[1] == path.name:
-                sha256 = parts[0]
-                break
-    if not sha256 and sha_path.exists():
+    if sha_path.exists():
         for line in sha_path.read_text().splitlines():
             parts = line.split()
             if len(parts) >= 2 and parts[1] == path.name:
@@ -246,7 +238,7 @@ for path in sorted(iso_dir.glob("StrawWU-*.iso"), key=lambda p: p.name, reverse=
 
     rel = resolve_publish_assets(version)
 
-    release_url = rel["release_url"] if rel else f"https://github.com/{gh_repo}/tree/{branch}/iso/v{version}"
+    release_url = rel["release_url"] if rel else f"https://github.com/{gh_repo}/releases/tag/v{version}"
     entry = {
         "version": version,
         "filename": path.name,
@@ -304,12 +296,10 @@ latest_published = (
     max((e["version"] for e in published), key=version_key) if published else None
 )
 
-if any(e.get("storage") == "r2" for e in entries):
-    download_base = r2_cdn_base
-elif any(e.get("storage") == "sourceforge" for e in entries):
-    download_base = sf_cdn_base
+if any(e.get("storage") == "release" for e in entries):
+    download_base = releases_download_base
 else:
-    download_base = raw_base
+    download_base = releases_download_base
 
 payload = {
     "schema": "strawwu-public-releases/v8",

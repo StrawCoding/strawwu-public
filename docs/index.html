@@ -289,7 +289,7 @@ sha256sum -c SHA256SUMS</pre>
     function downloadLabel(release) {
       if (release.iso_url) return `下載 ISO（${release.size_human}）`;
       if (canBrowserJoin(release) && supportsSavePicker()) return `下載 ISO（${release.size_human}）`;
-      if (canBrowserJoin(release)) return '倉庫下載';
+      if (canBrowserJoin(release)) return 'Release 下載';
       return '查看倉庫';
     }
 
@@ -309,7 +309,7 @@ sha256sum -c SHA256SUMS</pre>
       const status = document.getElementById('download-status');
       btn.disabled = true;
       progress.setAttribute('aria-hidden', 'false');
-      status.textContent = `正在從倉庫抓取 ${isoParts(release).length} 個分片並合併…`;
+      status.textContent = `正在從 GitHub Release 抓取 ${isoParts(release).length} 個分片並合併…`;
 
       try {
         const result = await downloadJoinedIso(release, {
@@ -333,15 +333,17 @@ sha256sum -c SHA256SUMS</pre>
         : release.storage === 'sourceforge' && release.iso_url
         ? '<p class="meta-line">ISO 整包存放於 SourceForge（單一完整檔案，不分片）。</p>'
         : canBrowserJoin(release) && !release.iso_url
-        ? '<p class="meta-line">ISO 存放在 GitHub 倉庫 iso/；此頁會抓取分片並合併成單一 .iso 檔。</p>'
+        ? '<p class="meta-line">ISO 分片存放在 GitHub Release；此頁會抓取分片並合併成單一 .iso 檔。</p>'
         : release.iso_url
           ? '<p class="meta-line">ISO 直連下載（單一完整檔案）。</p>'
           : '';
-      const secondaryLabel = release.storage === 'r2'
+      const secondaryLabel = release.storage === 'release'
         ? 'GitHub Release'
-        : release.storage === 'sourceforge'
-          ? 'SourceForge 目錄'
-          : '倉庫目錄';
+        : release.storage === 'r2'
+          ? 'GitHub Release'
+          : release.storage === 'sourceforge'
+            ? 'SourceForge 目錄'
+            : 'GitHub Release';
       el.innerHTML = `
         <span class="latest-badge">${esc(heroVersionLabel(data, release))}</span>
         <img class="hero-logo" src="assets/branding/strawwu-lockup.svg" width="384" height="256" alt="StrawWU" />

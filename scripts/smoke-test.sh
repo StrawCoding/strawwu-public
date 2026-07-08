@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Smoke test strawwu-public manifest and repo ISO metadata.
+# Smoke test strawwu-public manifest and GitHub Release metadata.
 set -euo pipefail
 
 BASE="${STRAWWU_PUBLIC_BASE:-http://127.0.0.1:9106}"
@@ -36,7 +36,7 @@ check "local branding lockup svg" "curl -fsSI '$BASE/assets/branding/strawwu-loc
 check "manifest no wastebase mirror" "! curl -fsS '$BASE/releases.json' | grep -q 'wastebase.xyz'"
 check "manifest schema v8" "curl -fsS '$BASE/releases.json' | grep -q 'strawwu-public-releases/v8'"
 check "manifest whole-file policy" "curl -fsS '$BASE/releases.json' | grep -q 'whole-file-preferred'"
-check "manifest has r2_base field" "curl -fsS '$BASE/releases.json' | grep -q '\"r2_base\"'"
+check "manifest has github_repo field" "curl -fsS '$BASE/releases.json' | grep -q '\"github_repo\"'"
 
 latest_json="$(curl -fsS "$BASE/releases.json")"
 LATEST_VER="$(python3 -c "import json,sys; print(json.loads(sys.argv[1])['latest'])" "$latest_json")"
@@ -71,14 +71,14 @@ elif iso:
   if [[ -n "$part_url" ]] && curl -fsSI "$part_url" | grep -qi '200\|302'; then
     check "latest iso asset reachable" "true"
   else
-    skip_check "latest iso asset reachable (push LFS first: $part_url)"
+    skip_check "latest iso asset reachable (publish release first: $part_url)"
   fi
 else
   skip_check "manifest latest published (v${DOWNLOAD_VER})"
 fi
 
-if [[ -d "$(dirname "$0")/../iso/v${DOWNLOAD_VER}" ]]; then
-  check "local iso/v${DOWNLOAD_VER} exists" "test -d '$(dirname "$0")/../iso/v${DOWNLOAD_VER}'"
+if python3 -c "import json,sys; d=json.loads(sys.argv[1]); r=next(x for x in d['releases'] if x['version']==sys.argv[2]); sys.exit(0 if r.get('storage')=='release' else 1)" "$latest_json" "$DOWNLOAD_VER" 2>/dev/null; then
+  check "latest uses github release storage" "true"
 fi
 
 if curl -fsS "$PAGES_URL/releases.json" >/dev/null 2>&1; then
