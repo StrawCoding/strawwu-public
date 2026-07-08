@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
-# Publish StrawWU ISO: direct .iso to external CDN (S3/R2), metadata to GitHub Release.
-# GitHub Release/LFS caps single files at 2 GiB — ISOs (~5 GiB) must NOT be split.
+# Publish StrawWU ISO: whole .iso to Cloudflare R2 CDN, metadata/SHA256 to GitHub Release.
+# GitHub Release/LFS caps ~2 GiB — ISOs (~5 GiB) must NOT be split.
 set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck disable=SC1091
+[[ -f "$SCRIPT_DIR/iso-cdn.env" ]] && source "$SCRIPT_DIR/iso-cdn.env"
 
 REPO="${STRAWWU_PUBLIC_REPO:-StrawCoding/strawwu-public}"
 ISO_DIR="${STRAWWU_ISO_DIR:-/mnt/data/code/project/StrawCoding/StrawWU/os-image/output}"
@@ -10,7 +14,7 @@ SKIP_UPLOAD="${STRAWWU_SKIP_RELEASE_UPLOAD:-0}"
 DELETE_PART_ASSETS="${STRAWWU_DELETE_PART_ASSETS:-1}"
 
 # Public CDN base for direct ISO URLs (NOT the Hermes build machine).
-CDN_BASE="${STRAWWU_ISO_CDN_BASE:-https://download.strawwu.org}"
+CDN_BASE="${STRAWWU_ISO_CDN_BASE:-https://pub-5f85d511d7344db2be8308026a082b13.r2.dev}"
 S3_ENDPOINT="${STRAWWU_ISO_S3_ENDPOINT:-}"
 S3_BUCKET="${STRAWWU_ISO_S3_BUCKET:-strawwu-releases}"
 S3_PREFIX="${STRAWWU_ISO_S3_PREFIX:-releases}"
@@ -30,11 +34,12 @@ fi
 iso="$ISO_DIR/StrawWU-${VERSION}-amd64.iso"
 [[ -f "$iso" ]] || { echo "ISO not found: $iso" >&2; exit 1; }
 
-root="$(cd "$(dirname "$0")/.." && pwd)"
+root="$(cd "$SCRIPT_DIR/.." && pwd)"
 base="$(basename "$iso")"
 tag="v${VERSION}"
 object_key="${S3_PREFIX}/${tag}/${base}"
 iso_url="${CDN_BASE%/}/${object_key}"
+checksum_url="${CDN_BASE%/}/${S3_PREFIX}/${tag}/SHA256SUMS"
 release_page="https://github.com/${REPO}/releases/tag/${tag}"
 sha256="$(sha256sum "$iso" | awk '{print $1}')"
 size="$(stat -c%s "$iso")"
@@ -140,6 +145,29 @@ if [[ "$DELETE_PART_ASSETS" == "1" ]]; then
   done
 fi
 
+marker_dir="$root/docs/r2-releases"
+mkdir -p "$marker_dir"
+python3 - "$marker_dir/v${VERSION}.json" "$VERSION" "$base" "$size" "$sha256" "$iso_url" "$checksum_url" "$release_page" "$S3_PREFIX" <<'PY'
+import json, sys
+from datetime import datetime, timezone
+out, version, filename, size, sha256, iso_url, checksum_url, release_url, prefix = sys.argv[1:]
+payload = {
+    "version": version,
+    "filename": filename,
+    "size": int(size),
+    "sha256": sha256,
+    "iso_url": iso_url,
+    "checksum_url": checksum_url,
+    "release_url": release_url,
+    "prefix": prefix,
+    "storage": "r2",
+    "published_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+}
+open(out, "w").write(json.dumps(payload, indent=2) + "\n")
+print(f"Wrote {out}")
+PY
+
 echo "Published ${tag}"
 echo "  ISO: ${iso_url}"
 echo "  Release: ${release_page}"
+echo "Next: ./scripts/generate-manifest.sh && git add docs/r2-releases docs/releases.json && git commit && git push"

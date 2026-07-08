@@ -34,9 +34,9 @@ check "local releases.json" "curl -fsS '$BASE/releases.json' | python3 -c 'impor
 check "local branding icon svg" "curl -fsSI '$BASE/assets/branding/strawwu-icon.svg' | grep -q '200'"
 check "local branding lockup svg" "curl -fsSI '$BASE/assets/branding/strawwu-lockup.svg' | grep -q '200'"
 check "manifest no wastebase mirror" "! curl -fsS '$BASE/releases.json' | grep -q 'wastebase.xyz'"
-check "manifest no local cdn" "! curl -fsS '$BASE/releases.json' | grep -q 'download.strawwu.org'"
 check "manifest schema v8" "curl -fsS '$BASE/releases.json' | grep -q 'strawwu-public-releases/v8'"
 check "manifest whole-file policy" "curl -fsS '$BASE/releases.json' | grep -q 'whole-file-preferred'"
+check "manifest has r2_base field" "curl -fsS '$BASE/releases.json' | grep -q '\"r2_base\"'"
 
 latest_json="$(curl -fsS "$BASE/releases.json")"
 LATEST_VER="$(python3 -c "import json,sys; print(json.loads(sys.argv[1])['latest'])" "$latest_json")"
