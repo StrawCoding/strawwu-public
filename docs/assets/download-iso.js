@@ -1,7 +1,7 @@
 /**
  * StrawWU ISO download helpers.
- * GitHub Release assets block cross-origin fetch (no CORS), so remote join rarely works.
- * Preferred flow: download parts via links, then merge locally (file picker) or join-iso.sh.
+ * GitHub Release assets block cross-origin fetch (no CORS).
+ * Browser join uses cors_proxy_base (download.strawwu.org/gh-proxy) when available.
  */
 export function isoParts(release) {
   if (!release?.parts?.length) return []
@@ -24,8 +24,17 @@ export function supportsOpenPicker() {
 
 let remoteFetchProbe = null
 
-/** True only if GitHub Release parts are readable from this origin (usually false). */
-export async function probeRemotePartFetch(release) {
+export function partFetchUrl(part, release, manifest) {
+  if (part?.fetch_url) return part.fetch_url
+  const base = manifest?.cors_proxy_base || release?.cors_proxy_base
+  if (base && part?.name && release?.version) {
+    return `${base.replace(/\/$/, '')}/v${release.version}/${part.name}`
+  }
+  return part?.url
+}
+
+/** True when release parts are readable from this origin (via CORS proxy). */
+export async function probeRemotePartFetch(release, manifest) {
   if (remoteFetchProbe !== null) return remoteFetchProbe
   const parts = isoParts(release)
   if (!parts.length) {
@@ -33,8 +42,9 @@ export async function probeRemotePartFetch(release) {
     return false
   }
   const probe = parts.reduce((a, b) => ((a.size || 0) <= (b.size || 0) ? a : b))
+  const url = partFetchUrl(probe, release, manifest)
   try {
-    const resp = await fetch(probe.url, { method: 'GET', headers: { Range: 'bytes=0-0' } })
+    const resp = await fetch(url, { method: 'GET', headers: { Range: 'bytes=0-0' } })
     remoteFetchProbe = resp.ok || resp.status === 206
   } catch {
     remoteFetchProbe = false
@@ -130,10 +140,10 @@ export async function mergeLocalParts(release, { onProgress } = {}) {
   return { filename, bytes: written }
 }
 
-export async function downloadJoinedIso(release, { onProgress } = {}) {
+export async function downloadJoinedIso(release, { manifest, onProgress } = {}) {
   if (remoteFetchProbe === false) {
     throw new Error(
-      'GitHub Release 分片無法跨網域抓取（CORS）。請先下載分片，再按「合併本機分片」或使用 join-iso.sh。',
+      '無法從瀏覽器抓取 GitHub 分片。請稍後再試，或改用手動下載分片後「合併本機分片」。',
     )
   }
 
@@ -159,7 +169,8 @@ export async function downloadJoinedIso(release, { onProgress } = {}) {
 
   try {
     for (const part of parts) {
-      const resp = await fetch(part.url)
+      const url = partFetchUrl(part, release, manifest)
+      const resp = await fetch(url)
       if (!resp.ok) {
         throw new Error(`Failed to fetch ${part.name}: HTTP ${resp.status}`)
       }

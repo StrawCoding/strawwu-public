@@ -319,7 +319,7 @@ sha256sum -c SHA256SUMS</pre>
 
     function downloadLabel(release) {
       if (release.iso_url) return `下載 ISO（${release.size_human}）`;
-      if (hasChunkedParts(release)) return '下載分片';
+      if (hasChunkedParts(release)) return '下載並合併 ISO';
       return 'GitHub Release';
     }
 
@@ -329,7 +329,7 @@ sha256sum -c SHA256SUMS</pre>
       const base = releaseDownloadBase(release) || release.release_url;
       return `
         <div class="part-box" id="part-downloads">
-          <p class="meta-line">GitHub Release 分片（請下載全部 ${parts.length} 個檔案後合併）：</p>
+          <p class="meta-line">GitHub Release 分片（備用直連，共 ${parts.length} 個）：</p>
           <ul class="part-list">
             ${parts.map((p) => `<li><a href="${esc(p.url)}" rel="noopener">${esc(p.name)}</a> · ${esc(formatPartSize(p.size))}</li>`).join('')}
           </ul>
@@ -363,6 +363,7 @@ sha256sum -c SHA256SUMS</pre>
       try {
         const joinFn = mode === 'remote' ? downloadJoinedIso : mergeLocalParts;
         const result = await joinFn(release, {
+          manifest: manifestData,
           onProgress({ percent }) {
             setProgressUI(true, percent, `處理中… ${percent.toFixed(1)}%`);
           },
@@ -386,10 +387,14 @@ sha256sum -c SHA256SUMS</pre>
         return;
       }
       if (hasChunkedParts(release)) {
+        if (canRemoteFetchJoin(release)) {
+          await runJoinJob(release, 'remote');
+          return;
+        }
         const box = document.getElementById('part-downloads');
         if (box) {
           box.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          setProgressUI(false, 0, '請點選上方連結下載全部分片，完成後按「合併本機分片」。');
+          setProgressUI(false, 0, '瀏覽器無法自動合併時，請下載分片後按「合併本機分片」。');
         } else {
           window.open(release.release_url, '_blank', 'noopener');
         }
@@ -415,7 +420,7 @@ sha256sum -c SHA256SUMS</pre>
       const el = document.getElementById('download');
       const chunked = hasChunkedParts(release);
       const storageHint = chunked
-        ? '<p class="meta-line">ISO 分片在 GitHub Release（單檔上限 2 GiB）。請先下載全部分片，再用本頁合併或 join-iso.sh。</p>'
+        ? '<p class="meta-line">按「下載並合併 ISO」可在瀏覽器內抓取 GitHub 分片並組裝完整映像（需支援檔案儲存 API 的 Chromium 系瀏覽器）。</p>'
         : release.iso_url
           ? '<p class="meta-line">ISO 直連下載（單一完整檔案）。</p>'
           : '';
@@ -499,7 +504,7 @@ sha256sum -c SHA256SUMS`;
         manifestData = data;
         const latestVer = data.latest;
         const release = pickRelease(data);
-        await probeRemotePartFetch(release);
+        await probeRemotePartFetch(release, data);
         renderHero(data, release);
         renderTable(data.releases, latestVer);
         document.getElementById('updated-at').textContent =

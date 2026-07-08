@@ -1,0 +1,7 @@
+name = "strawwu-gh-release-cors"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+account_id = "63342adb3f002cd3854e1fe49dd88323"
+
+[observability]
+enabled = true

@@ -38,7 +38,9 @@ check "manifest schema v8" "curl -fsS '$BASE/releases.json' | grep -q 'strawwu-p
 check "manifest release-chunked policy" "curl -fsS '$BASE/releases.json' | grep -q 'release-chunked'"
 check "manifest has github_repo field" "curl -fsS '$BASE/releases.json' | grep -q '\"github_repo\"'"
 check "local download-iso.js has local merge" "grep -q 'mergeLocalParts' docs/assets/download-iso.js"
-check "index mentions part downloads" "grep -q 'part-downloads' docs/index.html"
+check "local download-iso.js has cors proxy fetch" "grep -q 'partFetchUrl' docs/assets/download-iso.js"
+check "manifest has cors_proxy_base" "curl -fsS '$BASE/releases.json' | grep -q 'cors_proxy_base'"
+check "index mentions browser join" "grep -q '下載並合併 ISO' docs/index.html"
 
 latest_json="$(curl -fsS "$BASE/releases.json")"
 LATEST_VER="$(python3 -c "import json,sys; print(json.loads(sys.argv[1])['latest'])" "$latest_json")"

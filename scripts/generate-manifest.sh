@@ -10,6 +10,7 @@ GITHUB_REPO="${STRAWWU_PUBLIC_REPO:-StrawCoding/strawwu-public}"
 RAW_BASE="${STRAWWU_RAW_BASE:-https://media.githubusercontent.com/media/${GITHUB_REPO}}"
 RELEASES_DOWNLOAD_BASE="${STRAWWU_RELEASES_DOWNLOAD_BASE:-https://github.com/${GITHUB_REPO}/releases/download}"
 PAGES_BASE="${STRAWWU_PAGES_BASE:-https://strawcoding.github.io/strawwu-public}"
+CORS_PROXY_BASE="${STRAWWU_GH_CORS_PROXY:-https://download.strawwu.org/gh-proxy}"
 BRANCH="${STRAWWU_ISO_BRANCH:-main}"
 SF_CDN_BASE="${STRAWWU_SF_CDN_BASE:-https://sourceforge.net/projects}"
 
@@ -18,7 +19,7 @@ if [[ ! -d "$ISO_DIR" ]]; then
   exit 1
 fi
 
-python3 - "$ISO_DIR" "$ISO_REPO_DIR" "$DEST" "$GITHUB_REPO" "$RAW_BASE" "$RELEASES_DOWNLOAD_BASE" "$PAGES_BASE" "$BRANCH" "$SF_MARKER_DIR" "$SF_CDN_BASE" <<'PY'
+python3 - "$ISO_DIR" "$ISO_REPO_DIR" "$DEST" "$GITHUB_REPO" "$RAW_BASE" "$RELEASES_DOWNLOAD_BASE" "$PAGES_BASE" "$CORS_PROXY_BASE" "$BRANCH" "$SF_MARKER_DIR" "$SF_CDN_BASE" <<'PY'
 import hashlib
 import json
 import re
@@ -34,9 +35,10 @@ gh_repo = sys.argv[4]
 raw_base = sys.argv[5].rstrip("/")
 releases_download_base = sys.argv[6].rstrip("/")
 pages_base = sys.argv[7].rstrip("/")
-branch = sys.argv[8]
-sf_marker_dir = Path(sys.argv[9])
-sf_cdn_base = sys.argv[10].rstrip("/")
+cors_proxy_base = sys.argv[8].rstrip("/")
+branch = sys.argv[9]
+sf_marker_dir = Path(sys.argv[10])
+sf_cdn_base = sys.argv[11].rstrip("/")
 entries = []
 ver_re = re.compile(r"StrawWU-(\d+\.\d+\.\d+\.\d+)-amd64\.iso$")
 
@@ -130,10 +132,14 @@ def gh_release_assets(version: str):
     for asset in data.get("assets") or []:
         name = asset.get("name") or ""
         url = asset.get("url") or f"{releases_download_base}/{tag}/{name}"
+        fetch_url = f"{cors_proxy_base}/v{version}/{name}" if name.endswith(".part") else None
         if name.endswith(".iso") and not name.endswith(".part"):
             full_iso_url = url
         if name.endswith(".part") or name in ("join-iso.sh", "SHA256SUMS", "SHA256SUMS.asc"):
-            assets.append({"name": name, "url": url, "size": asset.get("size")})
+            entry = {"name": name, "url": url, "size": asset.get("size")}
+            if fetch_url:
+                entry["fetch_url"] = fetch_url
+            assets.append(entry)
     part_assets = [a for a in assets if a["name"].endswith(".part")]
     if not full_iso_url and not part_assets:
         return None
@@ -274,6 +280,7 @@ payload = {
     "download_base": download_base,
     "pages_base": pages_base,
     "raw_base": raw_base,
+    "cors_proxy_base": cors_proxy_base,
     "sourceforge_base": sf_cdn_base,
     "github_repo": gh_repo,
     "iso_policy": "release-chunked",
