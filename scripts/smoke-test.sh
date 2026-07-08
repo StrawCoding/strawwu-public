@@ -37,6 +37,8 @@ check "manifest no wastebase mirror" "! curl -fsS '$BASE/releases.json' | grep -
 check "manifest schema v8" "curl -fsS '$BASE/releases.json' | grep -q 'strawwu-public-releases/v8'"
 check "manifest release-chunked policy" "curl -fsS '$BASE/releases.json' | grep -q 'release-chunked'"
 check "manifest has github_repo field" "curl -fsS '$BASE/releases.json' | grep -q '\"github_repo\"'"
+check "local download-iso.js has local merge" "grep -q 'mergeLocalParts' docs/assets/download-iso.js"
+check "index mentions part downloads" "grep -q 'part-downloads' docs/index.html"
 
 latest_json="$(curl -fsS "$BASE/releases.json")"
 LATEST_VER="$(python3 -c "import json,sys; print(json.loads(sys.argv[1])['latest'])" "$latest_json")"

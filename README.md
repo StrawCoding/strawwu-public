@@ -3,9 +3,9 @@
 公開發行倉庫：StrawWU ISO 下載站與版本清單。
 
 - **下載站（GitHub Pages）**：https://strawcoding.github.io/strawwu-public/
-- **ISO 檔案（GitHub Release）**：`releases/download/v<version>/`（分片，瀏覽器合併）
+- **ISO 檔案（GitHub Release）**：`releases/download/v<version>/`（分片；瀏覽器下載後本機合併或 `join-iso.sh`）
 
-ISO 約 4–5 GiB。GitHub Release 單檔上限 **2 GiB**，因此以分片上傳；下載頁會在瀏覽器內合併成完整 `.iso`。
+ISO 約 4–5 GiB。GitHub Release 單檔上限 **2 GiB**，因此以分片上傳；下載頁提供分片直連，並可用瀏覽器「合併本機分片」或 `join-iso.sh` 組裝（GitHub 資產不允許跨網域 fetch，無法一鍵在瀏覽器內抓分片合併）。
 
 **禁止**在 Hermes 建置機或 wastebase tunnel 上託管 ISO 下載鏡像。
 
@@ -31,8 +31,9 @@ git push
 ## 使用者下載與驗證
 
 1. 開啟 https://strawcoding.github.io/strawwu-public/
-2. 點「下載 ISO」— 瀏覽器抓取 Release 分片並合併
-3. 驗證：
+2. 下載全部分片（或從 GitHub Release 取得 `join-iso.sh`）
+3. 按「合併本機分片」選取 `.part` 檔，或執行 `./join-iso.sh StrawWU-<ver>-amd64.iso StrawWU-<ver>-amd64.iso.*.part`
+4. 驗證：
 
 ```bash
 curl -fsSLO https://github.com/StrawCoding/strawwu-public/releases/download/v<version>/SHA256SUMS

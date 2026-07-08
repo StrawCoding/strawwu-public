@@ -190,6 +190,21 @@
     }
     .loading { color: var(--muted); padding: 2rem; text-align: center; }
     .error { color: var(--danger); padding: 1rem; background: rgba(248,113,113,0.08); border-radius: var(--radius); }
+    .part-box {
+      margin-top: 1.25rem;
+      padding: 1rem 1.1rem;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--panel-border);
+      border-radius: var(--radius);
+    }
+    .part-list {
+      margin: 0.5rem 0 0.75rem;
+      padding-left: 1.1rem;
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .part-list li { margin: 0.25rem 0; }
     @media (max-width: 640px) {
       .hide-sm { display: none; }
       th, td { padding: 0.6rem 0.75rem; }
@@ -249,10 +264,21 @@ sha256sum -c SHA256SUMS</pre>
   </div>
 
   <script type="module">
-    import { canBrowserJoin, downloadJoinedIso, isoParts, supportsSavePicker } from './assets/download-iso.js';
+    import {
+      canLocalMerge,
+      canRemoteFetchJoin,
+      downloadJoinedIso,
+      hasChunkedParts,
+      isoParts,
+      mergeLocalParts,
+      probeRemotePartFetch,
+      releaseDownloadBase,
+      supportsSavePicker,
+    } from './assets/download-iso.js';
 
     const BASE = document.querySelector('meta[name="base-path"]')?.content || '';
     const MANIFEST = `${BASE}releases.json`.replace(/\/+/g, '/');
+    let manifestData = null;
 
     function esc(s) {
       const d = document.createElement('div');
@@ -286,11 +312,72 @@ sha256sum -c SHA256SUMS</pre>
       return `最新版本 v${release.version}`;
     }
 
+    function formatPartSize(bytes) {
+      if (!bytes) return '—';
+      return `${(bytes / (1024 ** 3)).toFixed(2)} GiB`;
+    }
+
     function downloadLabel(release) {
       if (release.iso_url) return `下載 ISO（${release.size_human}）`;
-      if (canBrowserJoin(release) && supportsSavePicker()) return `下載 ISO（${release.size_human}）`;
-      if (canBrowserJoin(release)) return 'Release 下載';
-      return '查看倉庫';
+      if (hasChunkedParts(release)) return '下載分片';
+      return 'GitHub Release';
+    }
+
+    function renderPartLinks(release) {
+      const parts = isoParts(release);
+      if (!parts.length) return '';
+      const base = releaseDownloadBase(release) || release.release_url;
+      return `
+        <div class="part-box" id="part-downloads">
+          <p class="meta-line">GitHub Release 分片（請下載全部 ${parts.length} 個檔案後合併）：</p>
+          <ul class="part-list">
+            ${parts.map((p) => `<li><a href="${esc(p.url)}" rel="noopener">${esc(p.name)}</a> · ${esc(formatPartSize(p.size))}</li>`).join('')}
+          </ul>
+          <p class="meta-line">
+            <a href="${esc(release.checksum_url || `${base}/SHA256SUMS`)}" rel="noopener">SHA256SUMS</a>
+            · <a href="${esc(`${base}/join-iso.sh`)}" rel="noopener">join-iso.sh</a>
+          </p>
+        </div>`;
+    }
+
+    function setProgressUI(active, percent, message) {
+      const progress = document.getElementById('download-progress');
+      const bar = document.getElementById('download-progress-bar');
+      const status = document.getElementById('download-status');
+      if (!progress || !bar || !status) return;
+      progress.setAttribute('aria-hidden', active ? 'false' : 'true');
+      if (active) bar.style.width = `${Math.min(100, percent).toFixed(1)}%`;
+      status.textContent = message || '';
+    }
+
+    async function runJoinJob(release, mode) {
+      const btn = document.getElementById('download-btn');
+      const mergeBtn = document.getElementById('merge-local-btn');
+      if (btn) btn.disabled = true;
+      if (mergeBtn) mergeBtn.disabled = true;
+      const partsCount = isoParts(release).length;
+      setProgressUI(true, 0, mode === 'remote'
+        ? `正在從 GitHub Release 抓取 ${partsCount} 個分片並合併…`
+        : '正在合併本機分片…');
+
+      try {
+        const joinFn = mode === 'remote' ? downloadJoinedIso : mergeLocalParts;
+        const result = await joinFn(release, {
+          onProgress({ percent }) {
+            setProgressUI(true, percent, `處理中… ${percent.toFixed(1)}%`);
+          },
+        });
+        setProgressUI(true, 100, `已儲存 ${result.filename}（${(result.bytes / (1024 ** 3)).toFixed(2)} GiB）`);
+      } catch (err) {
+        if (err?.name === 'AbortError') {
+          setProgressUI(false, 0, '已取消');
+        } else {
+          setProgressUI(false, 0, err.message || String(err));
+        }
+      } finally {
+        if (btn) btn.disabled = false;
+        if (mergeBtn) mergeBtn.disabled = false;
+      }
     }
 
     async function startDownload(release) {
@@ -298,42 +385,46 @@ sha256sum -c SHA256SUMS</pre>
         window.open(release.iso_url, '_blank', 'noopener');
         return;
       }
-      if (!canBrowserJoin(release) || !supportsSavePicker()) {
+      if (hasChunkedParts(release)) {
+        const box = document.getElementById('part-downloads');
+        if (box) {
+          box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          setProgressUI(false, 0, '請點選上方連結下載全部分片，完成後按「合併本機分片」。');
+        } else {
+          window.open(release.release_url, '_blank', 'noopener');
+        }
+        return;
+      }
+      window.open(release.release_url, '_blank', 'noopener');
+    }
+
+    async function startLocalMerge(release) {
+      if (!canLocalMerge(release)) {
         window.open(release.release_url, '_blank', 'noopener');
         return;
       }
+      await runJoinJob(release, 'local');
+    }
 
-      const btn = document.getElementById('download-btn');
-      const progress = document.getElementById('download-progress');
-      const bar = document.getElementById('download-progress-bar');
-      const status = document.getElementById('download-status');
-      btn.disabled = true;
-      progress.setAttribute('aria-hidden', 'false');
-      status.textContent = `正在從 GitHub Release 抓取 ${isoParts(release).length} 個分片並合併…`;
-
-      try {
-        const result = await downloadJoinedIso(release, {
-          onProgress({ percent }) {
-            bar.style.width = `${Math.min(100, percent).toFixed(1)}%`;
-            status.textContent = `下載中… ${percent.toFixed(1)}%`;
-          },
-        });
-        status.textContent = `已儲存 ${result.filename}（${(result.bytes / (1024 ** 3)).toFixed(2)} GiB）`;
-      } catch (err) {
-        status.textContent = err.message;
-      } finally {
-        btn.disabled = false;
-      }
+    async function startRemoteJoin(release) {
+      if (!canRemoteFetchJoin(release)) return;
+      await runJoinJob(release, 'remote');
     }
 
     function renderHero(data, release) {
       const el = document.getElementById('download');
-      const storageHint = canBrowserJoin(release)
-        ? '<p class="meta-line">ISO 分片存放在 GitHub Release；此頁會抓取分片並合併成單一 .iso 檔。</p>'
+      const chunked = hasChunkedParts(release);
+      const storageHint = chunked
+        ? '<p class="meta-line">ISO 分片在 GitHub Release（單檔上限 2 GiB）。請先下載全部分片，再用本頁合併或 join-iso.sh。</p>'
         : release.iso_url
           ? '<p class="meta-line">ISO 直連下載（單一完整檔案）。</p>'
           : '';
-      const secondaryLabel = 'GitHub Release';
+      const mergeBtn = chunked && canLocalMerge(release)
+        ? `<button class="btn btn-secondary" id="merge-local-btn" type="button">合併本機分片</button>`
+        : '';
+      const remoteBtn = chunked && canRemoteFetchJoin(release)
+        ? `<button class="btn btn-secondary" id="remote-join-btn" type="button">一鍵下載合併</button>`
+        : '';
       el.innerHTML = `
         <span class="latest-badge">${esc(heroVersionLabel(data, release))}</span>
         <img class="hero-logo" src="assets/branding/strawwu-lockup.svg" width="384" height="256" alt="StrawWU" />
@@ -342,14 +433,21 @@ sha256sum -c SHA256SUMS</pre>
         <p class="hero-lead">基於 Ubuntu 26.04 Resolute 的 Dual Runtime 桌面作業系統。支援 Live USB 與硬碟安裝（BIOS + UEFI）。</p>
         <div class="btn-row">
           <button class="btn btn-primary" id="download-btn" type="button">${esc(downloadLabel(release))}</button>
-          <a class="btn btn-secondary" href="${esc(release.release_url)}" target="_blank" rel="noopener">${secondaryLabel}</a>
+          ${mergeBtn}
+          ${remoteBtn}
+          <a class="btn btn-secondary" href="${esc(release.release_url)}" target="_blank" rel="noopener">GitHub Release</a>
         </div>
         <div class="progress" id="download-progress" aria-hidden="true"><span id="download-progress-bar"></span></div>
         <p class="status-line" id="download-status"></p>
         <p class="meta-line">SHA256: ${esc(release.sha256)}</p>
         ${storageHint}
+        ${chunked ? renderPartLinks(release) : ''}
       `;
       document.getElementById('download-btn').addEventListener('click', () => startDownload(release));
+      const mergeEl = document.getElementById('merge-local-btn');
+      if (mergeEl) mergeEl.addEventListener('click', () => startLocalMerge(release));
+      const remoteEl = document.getElementById('remote-join-btn');
+      if (remoteEl) remoteEl.addEventListener('click', () => startRemoteJoin(release));
       const verify = document.getElementById('verify-cmd');
       if (verify && release.checksum_url) {
         verify.textContent = `# 下載完整 ISO 後驗證
@@ -380,7 +478,15 @@ sha256sum -c SHA256SUMS`;
       tbody.querySelectorAll('button[data-version]').forEach((btn) => {
         btn.addEventListener('click', () => {
           const release = releases.find((r) => r.version === btn.dataset.version);
-          if (release) startDownload(release);
+          if (!release) return;
+          if (manifestData) {
+            const picked = pickRelease(manifestData);
+            if (picked.version !== release.version) {
+              window.location.search = `?version=${encodeURIComponent(release.version)}`;
+              return;
+            }
+          }
+          startDownload(release);
         });
       });
     }
@@ -390,8 +496,10 @@ sha256sum -c SHA256SUMS`;
         const res = await fetch(MANIFEST);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
+        manifestData = data;
         const latestVer = data.latest;
         const release = pickRelease(data);
+        await probeRemotePartFetch(release);
         renderHero(data, release);
         renderTable(data.releases, latestVer);
         document.getElementById('updated-at').textContent =
