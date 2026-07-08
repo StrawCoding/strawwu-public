@@ -34,6 +34,27 @@ fi
 iso="$ISO_DIR/StrawWU-${VERSION}-amd64.iso"
 [[ -f "$iso" ]] || { echo "ISO not found: $iso" >&2; exit 1; }
 
+if [[ "$SKIP_UPLOAD" != "1" ]]; then
+  if [[ -z "$S3_ENDPOINT" || -z "$S3_ACCESS_KEY" || -z "$S3_SECRET_KEY" || "$S3_ACCESS_KEY" == "REPLACE_ME" || "$S3_SECRET_KEY" == "REPLACE_ME" ]]; then
+    cat >&2 <<EOF
+ERROR: STRAWWU ISO CDN credentials are not configured.
+
+GitHub Release assets and Git LFS are limited to 2 GiB per file on Free/Pro plans.
+StrawWU ISO (~5 GiB) must be uploaded to Cloudflare R2 (whole file, no split).
+
+Fill scripts/iso-cdn.env (Dashboard → R2 → Manage API Tokens → Object Read & Write):
+  STRAWWU_ISO_S3_ENDPOINT
+  STRAWWU_ISO_S3_BUCKET
+  STRAWWU_ISO_S3_ACCESS_KEY   # 32-char Access Key ID
+  STRAWWU_ISO_S3_SECRET_KEY
+  STRAWWU_ISO_CDN_BASE
+
+CF management token stays only in ~/.hermes/.env as the latest STRAWWU_CF_API_TOKEN.
+EOF
+    exit 1
+  fi
+fi
+
 root="$(cd "$SCRIPT_DIR/.." && pwd)"
 base="$(basename "$iso")"
 tag="v${VERSION}"
