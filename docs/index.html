@@ -243,12 +243,14 @@ sha256sum -c SHA256SUMS</pre>
     <footer>
       <p>StrawWU by <a href="https://strawwu.org/">StrawWU</a> ·
       <a href="https://strawcoding.github.io/strawwu-public/">strawwu-public</a> ·
-      <a href="https://github.com/StrawCoding/strawwu-public/releases">GitHub Releases</a></p>
+      <a href="https://github.com/StrawCoding/strawwu-public/tree/main/iso">GitHub 倉庫 iso/</a></p>
       <p style="margin-top:0.5rem" id="updated-at"></p>
     </footer>
   </div>
 
   <script type="module">
+    import { canBrowserJoin, downloadJoinedIso, isoParts, supportsSavePicker } from './assets/download-iso.js';
+
     const BASE = document.querySelector('meta[name="base-path"]')?.content || '';
     const MANIFEST = `${BASE}releases.json`.replace(/\/+/g, '/');
 
@@ -273,23 +275,50 @@ sha256sum -c SHA256SUMS</pre>
 
     function downloadLabel(release) {
       if (release.iso_url) return `下載 ISO（${release.size_human}）`;
+      if (canBrowserJoin(release) && supportsSavePicker()) return `下載 ISO（${release.size_human}）`;
+      if (canBrowserJoin(release)) return '倉庫下載';
       return '查看倉庫';
     }
 
-    function startDownload(release) {
+    async function startDownload(release) {
       if (release.iso_url) {
         window.open(release.iso_url, '_blank', 'noopener');
         return;
       }
-      window.open(release.release_url, '_blank', 'noopener');
+      if (!canBrowserJoin(release) || !supportsSavePicker()) {
+        window.open(release.release_url, '_blank', 'noopener');
+        return;
+      }
+
+      const btn = document.getElementById('download-btn');
+      const progress = document.getElementById('download-progress');
+      const bar = document.getElementById('download-progress-bar');
+      const status = document.getElementById('download-status');
+      btn.disabled = true;
+      progress.setAttribute('aria-hidden', 'false');
+      status.textContent = `正在從倉庫抓取 ${isoParts(release).length} 個分片並合併…`;
+
+      try {
+        const result = await downloadJoinedIso(release, {
+          onProgress({ percent }) {
+            bar.style.width = `${Math.min(100, percent).toFixed(1)}%`;
+            status.textContent = `下載中… ${percent.toFixed(1)}%`;
+          },
+        });
+        status.textContent = `已儲存 ${result.filename}（${(result.bytes / (1024 ** 3)).toFixed(2)} GiB）`;
+      } catch (err) {
+        status.textContent = err.message;
+      } finally {
+        btn.disabled = false;
+      }
     }
 
     function renderHero(latest) {
       const el = document.getElementById('download');
-      const storageHint = latest.storage === 'repo'
-        ? '<p class="meta-line">ISO 存放在 GitHub 倉庫 iso/（Git LFS，單一完整檔案）。</p>'
+      const storageHint = canBrowserJoin(latest) && !latest.iso_url
+        ? '<p class="meta-line">ISO 存放在 GitHub 倉庫 iso/；此頁會抓取分片並合併成單一 .iso 檔。</p>'
         : latest.iso_url
-          ? '<p class="meta-line">ISO 直連下載（單一完整檔案，禁止分片）。</p>'
+          ? '<p class="meta-line">ISO 直連下載（單一完整檔案）。</p>'
           : '';
       el.innerHTML = `
         <span class="latest-badge">最新版本 v${esc(latest.version)}</span>
@@ -301,6 +330,7 @@ sha256sum -c SHA256SUMS</pre>
           <button class="btn btn-primary" id="download-btn" type="button">${esc(downloadLabel(latest))}</button>
           <a class="btn btn-secondary" href="${esc(latest.release_url)}" target="_blank" rel="noopener">倉庫目錄</a>
         </div>
+        <div class="progress" id="download-progress" aria-hidden="true"><span id="download-progress-bar"></span></div>
         <p class="status-line" id="download-status"></p>
         <p class="meta-line">SHA256: ${esc(latest.sha256)}</p>
         ${storageHint}
@@ -345,13 +375,13 @@ sha256sum -c SHA256SUMS`;
       try {
         const res = await fetch(MANIFEST);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        manifestData = await res.json();
-        const latestVer = manifestData.latest;
-        const latest = pickRelease(manifestData);
+        const data = await res.json();
+        const latestVer = data.latest;
+        const latest = pickRelease(data);
         renderHero(latest);
-        renderTable(manifestData.releases, latestVer);
+        renderTable(data.releases, latestVer);
         document.getElementById('updated-at').textContent =
-          `清單更新：${manifestData.updated_at || '—'}`;
+          `清單更新：${data.updated_at || '—'}`;
         document.querySelector('section:nth-of-type(2)').id = 'all-releases';
       } catch (err) {
         document.getElementById('download').innerHTML =

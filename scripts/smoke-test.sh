@@ -1,12 +1,10 @@
 #!/usr/bin/env bash
-# Smoke test strawwu-public manifest (repo direct ISO or CDN).
+# Smoke test strawwu-public manifest and repo ISO metadata.
 set -euo pipefail
 
 BASE="${STRAWWU_PUBLIC_BASE:-http://127.0.0.1:9106}"
 PAGES_URL="${STRAWWU_PAGES_URL:-https://strawcoding.github.io/strawwu-public}"
 REPO="${STRAWWU_PUBLIC_REPO:-StrawCoding/strawwu-public}"
-LATEST_TAG="${STRAWWU_LATEST_TAG:-v0.6.2.5}"
-LATEST_VER="${LATEST_TAG#v}"
 
 pass=0
 fail=0
@@ -36,20 +34,37 @@ check "local releases.json" "curl -fsS '$BASE/releases.json' | python3 -c 'impor
 check "local branding icon svg" "curl -fsSI '$BASE/assets/branding/strawwu-icon.svg' | grep -q '200'"
 check "local branding lockup svg" "curl -fsSI '$BASE/assets/branding/strawwu-lockup.svg' | grep -q '200'"
 check "manifest no wastebase mirror" "! curl -fsS '$BASE/releases.json' | grep -q 'wastebase.xyz'"
+check "manifest no local cdn" "! curl -fsS '$BASE/releases.json' | grep -q 'download.strawwu.org'"
 check "manifest schema v7" "curl -fsS '$BASE/releases.json' | grep -q 'strawwu-public-releases/v7'"
-check "manifest no split parts" "! curl -fsS '$BASE/releases.json' | grep -q '\\.part'"
+check "manifest media github base" "curl -fsS '$BASE/releases.json' | grep -q 'media.githubusercontent.com'"
 
 latest_json="$(curl -fsS "$BASE/releases.json")"
-if python3 -c "import json,sys; d=json.loads(sys.argv[1]); r=next(x for x in d['releases'] if x['version']==sys.argv[2]); sys.exit(0 if r.get('join_mode')=='direct' and r.get('iso_url') else 1)" "$latest_json" "$LATEST_VER" 2>/dev/null; then
-  check "manifest latest direct iso" "true"
-  iso_url="$(python3 -c "import json,sys; d=json.loads(sys.argv[1]); r=next(x for x in d['releases'] if x['version']==sys.argv[2]); print(r['iso_url'])" "$latest_json" "$LATEST_VER")"
-  if curl -fsSI "$iso_url" | grep -qi '200\|302'; then
-    check "latest iso url reachable" "true"
+LATEST_VER="$(python3 -c "import json,sys; print(json.loads(sys.argv[1])['latest'])" "$latest_json")"
+
+if python3 -c "import json,sys; d=json.loads(sys.argv[1]); r=next(x for x in d['releases'] if x['version']==sys.argv[2]); sys.exit(0 if r.get('iso_published') or r.get('has_full_iso') else 1)" "$latest_json" "$LATEST_VER" 2>/dev/null; then
+  check "manifest latest published" "true"
+  part_url="$(python3 -c "
+import json,sys
+d=json.loads(sys.argv[1])
+r=next(x for x in d['releases'] if x['version']==sys.argv[2])
+parts=r.get('parts') or []
+iso=r.get('iso_url')
+if parts:
+    print(next(p['url'] for p in parts if p['name'].endswith('.part')))
+elif iso:
+    print(iso)
+" "$latest_json" "$LATEST_VER" 2>/dev/null || true)"
+  if [[ -n "$part_url" ]] && curl -fsSI "$part_url" | grep -qi '200\|302'; then
+    check "latest iso asset reachable" "true"
   else
-    skip_check "latest iso url reachable ($iso_url)"
+    skip_check "latest iso asset reachable (push LFS first: $part_url)"
   fi
 else
-  skip_check "manifest latest direct iso (v${LATEST_VER} not published yet)"
+  skip_check "manifest latest published (v${LATEST_VER})"
+fi
+
+if [[ -d "$(dirname "$0")/../iso/v${LATEST_VER}" ]]; then
+  check "local iso/v${LATEST_VER} exists" "test -d '$(dirname "$0")/../iso/v${LATEST_VER}'"
 fi
 
 if curl -fsS "$PAGES_URL/releases.json" >/dev/null 2>&1; then

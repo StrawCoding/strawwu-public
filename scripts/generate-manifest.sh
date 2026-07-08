@@ -51,32 +51,22 @@ def repo_iso_assets(version: str):
         size = path.stat().st_size
         if name.endswith(".iso") and not name.endswith(".part"):
             full_iso_url = url
-        if name in ("SHA256SUMS", "SHA256SUMS.asc"):
+        if name.endswith(".part") or name in ("join-iso.sh", "SHA256SUMS", "SHA256SUMS.asc"):
             assets.append({"name": name, "url": url, "size": size})
-    if not full_iso_url:
+    part_assets = [a for a in assets if a["name"].endswith(".part")]
+    if not full_iso_url and not part_assets:
         return None
+    assets.sort(key=lambda a: a["name"])
     checksum = next((a for a in assets if a["name"] == "SHA256SUMS"), None)
     return {
         "published_at": datetime.fromtimestamp(repo_ver.stat().st_mtime, tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "release_url": f"https://github.com/{gh_repo}/tree/{branch}/iso/v{version}",
+        "parts": assets,
+        "part_assets": part_assets,
+        "has_iso_parts": bool(part_assets),
         "full_iso_url": full_iso_url,
         "checksum_url": checksum["url"] if checksum else None,
         "source": "repo",
-    }
-
-
-def cdn_iso_assets(version: str, iso_path: Path):
-    cdn_base = __import__("os").environ.get("STRAWWU_ISO_CDN_BASE", "https://download.strawwu.org").rstrip("/")
-    tag = f"v{version}"
-    base = iso_path.name
-    object_key = f"releases/{tag}/{base}"
-    url = f"{cdn_base}/{object_key}"
-    return {
-        "published_at": datetime.fromtimestamp(iso_path.stat().st_mtime, tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "release_url": f"https://github.com/{gh_repo}/releases/tag/{tag}",
-        "full_iso_url": url,
-        "checksum_url": f"{cdn_base}/releases/{tag}/SHA256SUMS",
-        "source": "cdn",
     }
 
 
@@ -91,20 +81,49 @@ def gh_release_assets(version: str):
         data = json.loads(out)
     except subprocess.CalledProcessError:
         return None
+    assets = []
+    full_iso_url = None
     for asset in data.get("assets") or []:
         name = asset.get("name") or ""
+        url = asset.get("url") or f"{releases_download_base}/{tag}/{name}"
         if name.endswith(".iso") and not name.endswith(".part"):
-            url = asset.get("url") or f"{releases_download_base}/{tag}/{name}"
-            return {
-                "published_at": data.get("publishedAt"),
-                "release_url": data.get("url") or f"https://github.com/{gh_repo}/releases/tag/{tag}",
-                "full_iso_url": url,
-                "source": "release",
-            }
-    return None
+            full_iso_url = url
+        if name.endswith(".part") or name in ("join-iso.sh", "SHA256SUMS", "SHA256SUMS.asc"):
+            assets.append({"name": name, "url": url, "size": asset.get("size")})
+    part_assets = [a for a in assets if a["name"].endswith(".part")]
+    if not full_iso_url and not part_assets:
+        return None
+    assets.sort(key=lambda a: a["name"])
+    checksum = next((a for a in assets if a["name"] == "SHA256SUMS"), None)
+    return {
+        "published_at": data.get("publishedAt"),
+        "release_url": data.get("url") or f"https://github.com/{gh_repo}/releases/tag/{tag}",
+        "parts": assets,
+        "part_assets": part_assets,
+        "has_iso_parts": bool(part_assets),
+        "full_iso_url": full_iso_url,
+        "checksum_url": checksum["url"] if checksum else None,
+        "source": "release",
+    }
 
 
+dest_path = Path(dest)
 withdrawn_meta = {}
+existing_sha = {}
+if dest_path.exists():
+    try:
+        existing_doc = json.loads(dest_path.read_text())
+        for old in existing_doc.get("releases") or []:
+            if old.get("sha256") and old.get("version"):
+                existing_sha[old["version"]] = old["sha256"]
+            if old.get("status") == "withdrawn":
+                withdrawn_meta[old["version"]] = {
+                    k: old[k]
+                    for k in ("status", "withdrawn_reason", "withdrawn_at")
+                    if k in old
+                }
+    except (json.JSONDecodeError, KeyError):
+        pass
 
 for path in sorted(iso_dir.glob("StrawWU-*.iso"), key=lambda p: p.name, reverse=True):
     m = ver_re.match(path.name)
@@ -114,12 +133,21 @@ for path in sorted(iso_dir.glob("StrawWU-*.iso"), key=lambda p: p.name, reverse=
     size = path.stat().st_size
     sha_path = Path(iso_dir) / "SHA256SUMS"
     sha256 = None
-    if sha_path.exists():
+    repo_sha = iso_repo_dir / f"v{version}" / "SHA256SUMS"
+    if repo_sha.exists():
+        for line in repo_sha.read_text().splitlines():
+            parts = line.split()
+            if len(parts) >= 2 and parts[1] == path.name:
+                sha256 = parts[0]
+                break
+    if not sha256 and sha_path.exists():
         for line in sha_path.read_text().splitlines():
             parts = line.split()
             if len(parts) >= 2 and parts[1] == path.name:
                 sha256 = parts[0]
                 break
+    if not sha256 and version in existing_sha:
+        sha256 = existing_sha[version]
     if not sha256:
         h = hashlib.sha256()
         with path.open("rb") as f:
@@ -127,11 +155,7 @@ for path in sorted(iso_dir.glob("StrawWU-*.iso"), key=lambda p: p.name, reverse=
                 h.update(chunk)
         sha256 = h.hexdigest()
 
-    rel = repo_iso_assets(version)
-    if not rel and __import__("os").environ.get("STRAWWU_ISO_CDN_BASE"):
-        rel = cdn_iso_assets(version, path)
-    if not rel:
-        rel = gh_release_assets(version)
+    rel = repo_iso_assets(version) or gh_release_assets(version)
 
     release_url = rel["release_url"] if rel else f"https://github.com/{gh_repo}/tree/{branch}/iso/v{version}"
     entry = {
@@ -156,12 +180,19 @@ for path in sorted(iso_dir.glob("StrawWU-*.iso"), key=lambda p: p.name, reverse=
             entry["download_url"] = rel["full_iso_url"]
             entry["join_mode"] = "direct"
             entry["iso_published"] = True
+        elif rel.get("has_iso_parts"):
+            entry["has_full_iso"] = True
+            entry["join_mode"] = "browser"
+            entry["download_url"] = f"{pages_base}/?version={version}#download"
+            entry["parts"] = rel["part_assets"]
+            entry["part_count"] = len(rel["part_assets"])
+            entry["iso_published"] = True
         if rel.get("checksum_url"):
             entry["checksum_url"] = rel["checksum_url"]
     if version in withdrawn_meta:
         entry.update(withdrawn_meta[version])
         entry["download_url"] = entry.get("release_url") or entry["download_url"]
-        for key in ("iso_url", "join_mode", "storage"):
+        for key in ("iso_url", "parts", "part_count", "join_mode", "storage"):
             entry.pop(key, None)
         entry["has_full_iso"] = False
         entry["iso_published"] = False
