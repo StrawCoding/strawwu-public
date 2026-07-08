@@ -35,7 +35,7 @@ check "local branding icon svg" "curl -fsSI '$BASE/assets/branding/strawwu-icon.
 check "local branding lockup svg" "curl -fsSI '$BASE/assets/branding/strawwu-lockup.svg' | grep -q '200'"
 check "manifest no wastebase mirror" "! curl -fsS '$BASE/releases.json' | grep -q 'wastebase.xyz'"
 check "manifest schema v8" "curl -fsS '$BASE/releases.json' | grep -q 'strawwu-public-releases/v8'"
-check "manifest whole-file policy" "curl -fsS '$BASE/releases.json' | grep -q 'whole-file-preferred'"
+check "manifest release-chunked policy" "curl -fsS '$BASE/releases.json' | grep -q 'release-chunked'"
 check "manifest has github_repo field" "curl -fsS '$BASE/releases.json' | grep -q '\"github_repo\"'"
 
 latest_json="$(curl -fsS "$BASE/releases.json")"

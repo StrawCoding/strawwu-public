@@ -328,22 +328,12 @@ sha256sum -c SHA256SUMS</pre>
 
     function renderHero(data, release) {
       const el = document.getElementById('download');
-      const storageHint = release.storage === 'r2' && release.iso_url
-        ? '<p class="meta-line">ISO 整包存放於 Cloudflare R2（單一完整檔案，不分片）。</p>'
-        : release.storage === 'sourceforge' && release.iso_url
-        ? '<p class="meta-line">ISO 整包存放於 SourceForge（單一完整檔案，不分片）。</p>'
-        : canBrowserJoin(release) && !release.iso_url
+      const storageHint = canBrowserJoin(release)
         ? '<p class="meta-line">ISO 分片存放在 GitHub Release；此頁會抓取分片並合併成單一 .iso 檔。</p>'
         : release.iso_url
           ? '<p class="meta-line">ISO 直連下載（單一完整檔案）。</p>'
           : '';
-      const secondaryLabel = release.storage === 'release'
-        ? 'GitHub Release'
-        : release.storage === 'r2'
-          ? 'GitHub Release'
-          : release.storage === 'sourceforge'
-            ? 'SourceForge 目錄'
-            : 'GitHub Release';
+      const secondaryLabel = 'GitHub Release';
       el.innerHTML = `
         <span class="latest-badge">${esc(heroVersionLabel(data, release))}</span>
         <img class="hero-logo" src="assets/branding/strawwu-lockup.svg" width="384" height="256" alt="StrawWU" />
