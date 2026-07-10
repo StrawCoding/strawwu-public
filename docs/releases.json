@@ -1,8 +1,8 @@
 {
   "schema": "strawwu-public-releases/v8",
-  "updated_at": "2026-07-10T09:34:54Z",
-  "latest": "0.7.0.17",
-  "latest_published": "0.7.0.17",
+  "updated_at": "2026-07-10T13:27:54Z",
+  "latest": "0.7.0.25",
+  "latest_published": "0.7.0.25",
   "download_base": "https://github.com/StrawCoding/strawwu-public/releases/download",
   "pages_base": "https://strawcoding.github.io/strawwu-public",
   "raw_base": "https://media.githubusercontent.com/media/StrawCoding/strawwu-public",
@@ -11,6 +11,42 @@
   "github_repo": "StrawCoding/strawwu-public",
   "iso_policy": "release-chunked",
   "releases": [
+    {
+      "version": "0.7.0.25",
+      "filename": "StrawWU-0.7.0.25-amd64.iso",
+      "size": 5259491328,
+      "size_human": "4.90 GiB",
+      "sha256": "885df41946b98fa7ec0b6b75bfee874a37aad1fb82e74c5c5ecfa949ace3ed4f",
+      "has_full_iso": true,
+      "download_url": "https://strawcoding.github.io/strawwu-public/?version=0.7.0.25#download",
+      "release_url": "https://github.com/StrawCoding/strawwu-public/releases/tag/v0.7.0.25",
+      "published_at": "2026-07-10T11:09:08Z",
+      "storage": "release",
+      "join_mode": "browser",
+      "parts": [
+        {
+          "name": "StrawWU-0.7.0.25-amd64.iso.01.part",
+          "url": "https://github.com/StrawCoding/strawwu-public/releases/download/v0.7.0.25/StrawWU-0.7.0.25-amd64.iso.01.part",
+          "size": 1887436800,
+          "fetch_url": "https://download.strawwu.org/gh-proxy/v0.7.0.25/StrawWU-0.7.0.25-amd64.iso.01.part"
+        },
+        {
+          "name": "StrawWU-0.7.0.25-amd64.iso.02.part",
+          "url": "https://github.com/StrawCoding/strawwu-public/releases/download/v0.7.0.25/StrawWU-0.7.0.25-amd64.iso.02.part",
+          "size": 1887436800,
+          "fetch_url": "https://download.strawwu.org/gh-proxy/v0.7.0.25/StrawWU-0.7.0.25-amd64.iso.02.part"
+        },
+        {
+          "name": "StrawWU-0.7.0.25-amd64.iso.03.part",
+          "url": "https://github.com/StrawCoding/strawwu-public/releases/download/v0.7.0.25/StrawWU-0.7.0.25-amd64.iso.03.part",
+          "size": 1484617728,
+          "fetch_url": "https://download.strawwu.org/gh-proxy/v0.7.0.25/StrawWU-0.7.0.25-amd64.iso.03.part"
+        }
+      ],
+      "part_count": 3,
+      "iso_published": true,
+      "checksum_url": "https://github.com/StrawCoding/strawwu-public/releases/download/v0.7.0.25/SHA256SUMS"
+    },
     {
       "version": "0.7.0.17",
       "filename": "StrawWU-0.7.0.17-amd64.iso",
